@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Заказ еды</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 16px;
+            padding-bottom: 80px;
+            color: #1a1a2e;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .header h1 { font-size: 20px; font-weight: 700; }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #eef2f7;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            user-select: none;
+        }
+        .tab.active {
+            background: #4361ee;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .filters input, .filters select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        .btn {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #3a56d4; }
+        .btn-danger { background: #ef476f; }
+        .btn-danger:hover { background: #d63d62; }
+        .btn-success { background: #06d6a0; }
+        .btn-success:hover { background: #05b88a; }
+        .btn-warning { background: #ffd166; color: #1a1a2e; }
+        .btn-warning:hover { background: #e6bc5c; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #4361ee;
+        }
+        .order-card.over-limit { border-left-color: #ef476f; background: #fff5f7; }
+        .order-card .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .order-card .employee { font-weight: 600; font-size: 16px; }
+        .order-card .cabinet {
+            background: #eef2f7;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #555;
+        }
+        .order-card .date { font-size: 13px; color: #777; }
+        .order-card .dishes {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .order-card .dishes span {
+            display: inline-block;
+            background: #f0f4ff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin: 2px 4px 2px 0;
+            font-size: 13px;
+        }
+        .order-card .total { font-weight: 700; font-size: 16px; margin: 6px 0; }
+        .order-card .total.over { color: #ef476f; }
+        .order-card .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .order-card .actions .btn { font-size: 12px; padding: 4px 12px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-bottom: 16px; font-size: 18px; }
+        .modal-content label {
+            display: block;
+            font-weight: 500;
+            margin: 10px 0 4px;
+            font-size: 14px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .modal-content .dish-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .modal-content .dish-row select { flex: 1; }
+        .modal-content .dish-row .price-label {
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: right;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .loading { text-align: center; padding: 40px 0; color: #777; }
+        .empty { text-align: center; padding: 40px 0; color: #999; }
+        .total-summary {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .total-summary .big { font-size: 18px; color: #4361ee; }
+        .menu-edit-btn {
+            background: #7209b7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4361ee;
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: #777;
+            margin-top: 4px;
+        }
+        .stat-table {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+        .stat-table h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .stat-table .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-table .row:last-child { border-bottom: none; }
+        .stat-table .bar {
+            background: #4361ee;
+            height: 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .debug-box {
+            background: #1a1a2e;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .debug-error { color: #ff6b6b; }
+        .user-badge {
+            background: #eef2f7;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            color: #555;
+        }
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .header h1 { font-size: 17px; }
+            .btn { font-size: 12px; padding: 6px 12px; }
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🍱 Заказы</h1>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <span class="user-badge" id="userBadge">👤 Загрузка...</span>
+            <button class="btn" onclick="openAddModal()">+ Добавить</button>
+            <button class="menu-edit-btn" onclick="openMenuModal()">📋 Меню</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="orders" onclick="switchTab('orders')">📋 Заказы</div>
+        <div class="tab" data-tab="stats" onclick="switchTab('stats')">📊 Статистика</div>
+    </div>
+
+    <div id="tab-orders" class="tab-content active">
+        <div class="filters">
+            <input type="date" id="filterDate" onchange="applyFilters()" />
+            <input type="text" id="filterName" placeholder="Поиск по имени..." oninput="applyFilters()" />
+            <button class="btn btn-warning" onclick="clearFilters()">Сбросить</button>
+        </div>
+
+        <div id="totalSummary" class="total-summary">
+            <span>Всего заказов: <strong id="totalCount">0</strong></span>
+            <span>Общая сумма: <strong id="totalSum" class="big">0 ₽</strong></span>
+        </div>
+
+        <div id="ordersContainer">
+            <div class="loading">Загрузка...</div>
+        </div>
+    </div>
+
+    <div id="tab-stats" class="tab-content">
+        <div id="statsContainer">
+            <div class="loading">Загрузка статистики...</div>
+        </div>
+    </div>
+
+    <!-- Модалки -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Новый заказ</h2>
+            <label>Дата</label>
+            <input type="date" id="editDate" />
+            <label>Кабинет</label>
+            <input type="text" id="editCabinet" placeholder="Например: 1 кабинет" />
+            <label>Сотрудник</label>
+            <input type="text" id="editEmployee" placeholder="ФИО" />
+            <label style="margin-top:12px;">Блюда (можно выбрать не все):</label>
+            <div id="dishContainer">
+                <div class="dish-row">
+                    <select class="dish-select" data-index="0" onchange="updateDishPrice(0)"><option value="">—</option></select>
+                    <span class="price-label" id="price_0">0 ₽</span>
+                </div>
+                <div class="dish-row">
+                    <select class="dish-select" data-index="1" onchange="updateDishPrice(1)"><option value="">—</option></select>
+                    <span class="price-label" id="price_1">0 ₽</span>
+                </div>
+                <div class="dish-row">
+                    <select class="dish-select" data-index="2" onchange="updateDishPrice(2)"><option value="">—</option></select>
+                    <span class="price-label" id="price_2">0 ₽</span>
+                </div>
+                <div class="dish-row">
+                    <select class="dish-select" data-index="3" onchange="updateDishPrice(3)"><option value="">—</option></select>
+                    <span class="price-label" id="price_3">0 ₽</span>
+                </div>
+                <div class="dish-row">
+                    <select class="dish-select" data-index="4" onchange="updateDishPrice(4)"><option value="">—</option></select>
+                    <span class="price-label" id="price_4">0 ₽</span>
+                </div>
+            </div>
+            <div style="margin-top:12px; font-weight:700; font-size:18px;">
+                Итого: <span id="editTotal">0</span> ₽
+                <span id="limitWarning" style="color:#ef476f; font-size:14px; display:none;"> (превышен лимит 520 ₽!)</span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Отмена</button>
+                <button class="btn btn-success" id="saveBtn" onclick="saveOrder()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="menuModal" class="modal">
+        <div class="modal-content">
+            <h2>📋 Меню</h2>
+            <div id="menuList"></div>
+            <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+                <input type="text" id="newDishName" placeholder="Название" style="flex:1; min-width:120px;" />
+                <input type="number" id="newDishPrice" placeholder="Цена" style="width:80px;" />
+                <button class="btn btn-success" onclick="addDish()">+ Добавить</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeMenuModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // ⚠️ ВСТАВЬТЕ ВАШУ ССЫЛКУ НА СКРИПТ (ОБЯЗАТЕЛЬНО!)
+        // ============================================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7u0Rl8IjYR2Qu4d_zo_H6x1b0oVYcjbiLMVnfI298cgclACaxMpZOmo6MvtKAvMkJ/exec';
+
+        // ============================================================
+        // НАСТРОЙКИ ПРАВ
+        // ============================================================
+        const ADMIN_NAME = 'Алакоз Сергей'; // Замените на ваше имя
+
+        // ============================================================
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+        // ============================================================
+        let orders = [];
+        let menu = {};
+        let editingRowIndex = null;
+        let currentFilterDate = '';
+        let currentFilterName = '';
+        let currentUser = '';
+        let userNameLoaded = false;
+
+        // ============================================================
+        // БЕЗОПАСНАЯ РАБОТА С ХРАНИЛИЩЕМ (для всех платформ)
+        // ============================================================
+        function saveToStorage(key, value) {
+            try {
+                sessionStorage.setItem(key, value);
+                localStorage.setItem(key, value);
+            } catch (e) {
+                // Если storage недоступен — просто игнорируем
+                console.log('Storage недоступен, продолжаем без него');
+            }
+        }
+
+        function getFromStorage(key) {
+            try {
+                return sessionStorage.getItem(key) || localStorage.getItem(key) || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // ============================================================
+        // ОПРЕДЕЛЕНИЕ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ (универсально)
+        // ============================================================
+        async function getCurrentUser() {
+            // 1. Пробуем получить сохранённое имя
+            const savedName = getFromStorage('userName');
+            if (savedName) {
+                currentUser = savedName;
+                userNameLoaded = true;
+                updateUserBadge();
+                return;
+            }
+
+            // 2. Если не сохранено — пробуем получить из Google (если залогинены)
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.name) {
+                        currentUser = data.name;
+                        userNameLoaded = true;
+                        saveToStorage('userName', currentUser);
+                        updateUserBadge();
+                        return;
+                    }
+                }
+            } catch (e) {
+                // Если не получилось — ничего страшного
+            }
+
+            // 3. Если ничего не вышло — спрашиваем у пользователя
+            const name = prompt('Введите ваше имя (как в таблице):');
+            if (name && name.trim() !== '') {
+                currentUser = name.trim();
+                userNameLoaded = true;
+                saveToStorage('userName', currentUser);
+                updateUserBadge();
+            } else {
+                currentUser = '';
+                updateUserBadge();
+            }
+        }
+
+        function updateUserBadge() {
+            const badge = document.getElementById('userBadge');
+            if (currentUser) {
+                const adminText = isAdmin() ? ' 👑' : '';
+                badge.textContent = `👤 ${currentUser}${adminText}`;
+            } else {
+                badge.textContent = '👤 Не выбрано';
+            }
+        }
+
+        // ============================================================
+        // ФУНКЦИИ ДЛЯ РАЗГРАНИЧЕНИЯ ПРАВ
+        // ============================================================
+        function isAdmin() {
+            return currentUser === ADMIN_NAME;
+        }
+
+        function getUserOrders() {
+            if (isAdmin()) {
+                return orders;
+            }
+            return orders.filter(order => order.Сотрудник === currentUser);
+        }
+
+        // ============================================================
+        // ЗАГРУЗКА ДАННЫХ
+        // ============================================================
+        async function loadData() {
+            try {
+                // Для iOS важно: добавляем заголовки
+                const options = {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                const [ordersRes, menuRes] = await Promise.all([
+                    fetch(`${SCRIPT_URL}?action=getOrders`, options),
+                    fetch(`${SCRIPT_URL}?action=getMenu`, options)
+                ]);
+
+                if (!ordersRes.ok) throw new Error(`HTTP ${ordersRes.status}`);
+                if (!menuRes.ok) throw new Error(`HTTP ${menuRes.status}`);
+
+                const ordersJson = await ordersRes.json();
+                const menuJson = await menuRes.json();
+
+                if (ordersJson.success && Array.isArray(ordersJson.data)) {
+                    orders = ordersJson.data;
+                } else {
+                    orders = [];
+                }
+
+                if (menuJson.success && typeof menuJson.data === 'object') {
+                    menu = menuJson.data;
+                } else {
+                    menu = {};
+                }
+
+                renderOrders();
+                populateDishSelects();
+
+                // Если статистика активна — обновляем
+                if (document.getElementById('tab-stats').classList.contains('active')) {
+                    renderStats();
+                }
+
+                // Скрываем загрузку
+                document.querySelector('.loading')?.remove();
+            } catch (e) {
+                console.error('Ошибка загрузки:', e);
+                document.getElementById('ordersContainer').innerHTML =
+                    `<div class="empty">❌ Ошибка: ${e.message}<br><br>Проверьте интернет и URL скрипта.</div>`;
+            }
+        }
+
+        // ============================================================
+        // ОТОБРАЖЕНИЕ ЗАКАЗОВ
+        // ============================================================
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            const userOrders = getUserOrders();
+            const filtered = userOrders.filter(order => {
+                if (currentFilterDate) {
+                    let orderDate = order.Дата || '';
+                    if (orderDate.includes('T')) {
+                        try {
+                            const d = new Date(orderDate);
+                            if (!isNaN(d.getTime())) {
+                                orderDate = d.toISOString().split('T')[0];
+                            }
+                        } catch (e) {}
+                    }
+                    if (orderDate !== currentFilterDate) return false;
+                }
+                if (currentFilterName) {
+                    const name = (order.Сотрудник || '').toLowerCase();
+                    if (!name.includes(currentFilterName.toLowerCase())) return false;
+                }
+                return true;
+            });
+
+            document.getElementById('totalCount').textContent = filtered.length;
+            const totalSum = filtered.reduce((sum, o) => sum + (parseInt(o.Сумма) || 0), 0);
+            document.getElementById('totalSum').textContent = totalSum + ' ₽';
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty">📭 Нет заказов</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map((order, idx) => {
+                const total = parseInt(order.Сумма) || 0;
+                const overLimit = total > 520;
+                
+                const dishes = [];
+                for (let i = 1; i <= 5; i++) {
+                    const dish = order[`Блюдо_${i}`];
+                    if (dish && dish.trim() !== '') {
+                        dishes.push(dish);
+                    }
+                }
+                const dishesHtml = dishes.map(d => `<span>${d}</span>`).join('');
+
+                let dateStr = order.Дата || '—';
+                if (dateStr && dateStr.includes('T')) {
+                    try {
+                        const d = new Date(dateStr);
+                        if (!isNaN(d.getTime())) {
+                            dateStr = d.toLocaleDateString('ru-RU');
+                        }
+                    } catch (e) {}
+                }
+
+                const realIndex = orders.indexOf(order);
+
+                return `
+                <div class="order-card ${overLimit ? 'over-limit' : ''}">
+                    <div class="top-row">
+                        <span class="employee">${order.Сотрудник || '—'}</span>
+                        <span class="cabinet">${order.Кабинет || '—'}</span>
+                        <span class="date">${dateStr}</span>
+                    </div>
+                    <div class="dishes">${dishesHtml || '—'}</div>
+                    <div class="total ${overLimit ? 'over' : ''}">
+                        Итого: ${total} ₽ ${overLimit ? '⚠️ превышен лимит!' : ''}
+                    </div>
+                    <div class="actions">
+                        ${isAdmin() || order.Сотрудник === currentUser ? `
+                            <button class="btn btn-warning" onclick="editOrder(${realIndex})">✏️</button>
+                            <button class="btn btn-danger" onclick="deleteOrder(${realIndex})">🗑️</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // ============================================================
+        // СТАТИСТИКА
+        // ============================================================
+        function renderStats() {
+            const container = document.getElementById('statsContainer');
+            const userOrders = getUserOrders();
+            
+            if (userOrders.length === 0) {
+                container.innerHTML = '<div class="empty">📊 Нет данных для статистики</div>';
+                return;
+            }
+
+            const totalOrders = userOrders.length;
+            const totalSum = userOrders.reduce((sum, o) => sum + (parseInt(o.Сумма) || 0), 0);
+            const avgSum = totalOrders > 0 ? Math.round(totalSum / totalOrders) : 0;
+
+            const days = {};
+            userOrders.forEach(order => {
+                let date = order.Дата || '';
+                if (date.includes('T')) {
+                    try {
+                        const d = new Date(date);
+                        if (!isNaN(d.getTime())) {
+                            date = d.toISOString().split('T')[0];
+                        }
+                    } catch (e) {}
+                }
+                if (!days[date]) days[date] = { count: 0, sum: 0 };
+                days[date].count++;
+                days[date].sum += parseInt(order.Сумма) || 0;
+            });
+
+            const dishCount = {};
+            userOrders.forEach(order => {
+                for (let i = 1; i <= 5; i++) {
+                    const dish = order[`Блюдо_${i}`];
+                    if (dish && dish.trim() !== '') {
+                        dishCount[dish] = (dishCount[dish] || 0) + 1;
+                    }
+                }
+            });
+            const topDishes = Object.entries(dishCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            let html = `
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="number">${totalOrders}</div>
+                        <div class="label">Всего заказов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${totalSum} ₽</div>
+                        <div class="label">Общая сумма</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${avgSum} ₽</div>
+                        <div class="label">Средний чек</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${Object.keys(days).length}</div>
+                        <div class="label">Дней с заказами</div>
+                    </div>
+                </div>
+            `;
+
+            if (topDishes.length > 0) {
+                const maxCount = topDishes[0][1];
+                html += `
+                    <div class="stat-table">
+                        <h3>🍽️ Популярные блюда</h3>
+                        ${topDishes.map(([name, count]) => `
+                            <div class="row">
+                                <span>${name}</span>
+                                <span>${count} раз</span>
+                            </div>
+                            <div class="bar" style="width: ${(count / maxCount) * 100}%;"></div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const sortedDays = Object.entries(days).sort((a, b) => a[0].localeCompare(b[0]));
+            if (sortedDays.length > 0) {
+                const maxDaySum = Math.max(...sortedDays.map(([_, d]) => d.sum));
+                html += `
+                    <div class="stat-table">
+                        <h3>📅 Заказы по дням</h3>
+                        ${sortedDays.map(([date, data]) => `
+                            <div class="row">
+                                <span>${date}</span>
+                                <span>${data.count} зак. / ${data.sum} ₽</span>
+                            </div>
+                            <div class="bar" style="width: ${(data.sum / maxDaySum) * 100}%;"></div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+        // ============================================================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            
+            if (tabName === 'stats') {
+                renderStats();
+            }
+        }
+
+        // ============================================================
+        // ФИЛЬТРЫ
+        // ============================================================
+        function applyFilters() {
+            currentFilterDate = document.getElementById('filterDate').value;
+            currentFilterName = document.getElementById('filterName').value;
+            renderOrders();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterDate').value = '';
+            document.getElementById('filterName').value = '';
+            currentFilterDate = '';
+            currentFilterName = '';
+            renderOrders();
+        }
+
+        // ============================================================
+        // ВЫПАДАЮЩИЕ СПИСКИ ДЛЯ БЛЮД
+        // ============================================================
+        function populateDishSelects() {
+            const selects = document.querySelectorAll('.dish-select');
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">—</option>';
+                Object.keys(menu).sort().forEach(dish => {
+                    const opt = document.createElement('option');
+                    opt.value = dish;
+                    opt.textContent = dish;
+                    select.appendChild(opt);
+                });
+                if (currentVal && menu[currentVal] !== undefined) {
+                    select.value = currentVal;
+                }
+            });
+            for (let i = 0; i < 5; i++) updateDishPrice(i);
+        }
+
+        function updateDishPrice(index) {
+            const select = document.querySelector(`.dish-select[data-index="${index}"]`);
+            const priceSpan = document.getElementById(`price_${index}`);
+            const dishName = select ? select.value : '';
+            const price = menu[dishName] || 0;
+            if (priceSpan) priceSpan.textContent = price + ' ₽';
+            updateEditTotal();
+        }
+
+        function updateEditTotal() {
+            let total = 0;
+            for (let i = 0; i < 5; i++) {
+                const select = document.querySelector(`.dish-select[data-index="${i}"]`);
+                const dishName = select ? select.value : '';
+                total += menu[dishName] || 0;
+            }
+            document.getElementById('editTotal').textContent = total;
+            const warning = document.getElementById('limitWarning');
+            const saveBtn = document.getElementById('saveBtn');
+            if (total > 520) {
+                warning.style.display = 'inline';
+                saveBtn.disabled = true;
+            } else {
+                warning.style.display = 'none';
+                saveBtn.disabled = false;
+            }
+        }
+
+        // ============================================================
+        // МОДАЛКИ: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ
+        // ============================================================
+        function openAddModal() {
+            editingRowIndex = null;
+            document.getElementById('modalTitle').textContent = '➕ Новый заказ';
+            
+            if (currentUser) {
+                document.getElementById('editEmployee').value = currentUser;
+                document.getElementById('editEmployee').readOnly = true;
+            } else {
+                document.getElementById('editEmployee').value = '';
+                document.getElementById('editEmployee').readOnly = false;
+            }
+            
+            document.getElementById('editDate').value = '';
+            document.getElementById('editCabinet').value = '';
+            document.querySelectorAll('.dish-select').forEach(s => s.value = '');
+            for (let i = 0; i < 5; i++) updateDishPrice(i);
+            document.getElementById('editModal').classList.add('open');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('editDate').value = today;
+            updateEditTotal();
+        }
+
+        function editOrder(index) {
+            const order = orders[index];
+            if (!order) return;
+            editingRowIndex = index;
+            document.getElementById('modalTitle').textContent = '✏️ Редактировать заказ';
+            
+            let dateStr = order.Дата || '';
+            if (dateStr.includes('T')) {
+                try {
+                    const d = new Date(dateStr);
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toISOString().split('T')[0];
+                    }
+                } catch (e) {}
+            }
+            document.getElementById('editDate').value = dateStr;
+            document.getElementById('editCabinet').value = order.Кабинет || '';
+            document.getElementById('editEmployee').value = order.Сотрудник || '';
+            document.getElementById('editEmployee').readOnly = true;
+            
+            const selects = document.querySelectorAll('.dish-select');
+            for (let i = 0; i < 5; i++) {
+                const dish = order[`Блюдо_${i+1}`] || '';
+                selects[i].value = dish;
+                updateDishPrice(i);
+            }
+            document.getElementById('editModal').classList.add('open');
+            updateEditTotal();
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('open');
+        }
+
+        // ============================================================
+        // СОХРАНЕНИЕ ЗАКАЗА
+        // ============================================================
+        async function saveOrder() {
+            const date = document.getElementById('editDate').value;
+            const cabinet = document.getElementById('editCabinet').value.trim();
+            const employee = document.getElementById('editEmployee').value.trim();
+
+            if (!date || !cabinet || !employee) {
+                alert('Пожалуйста, заполните дату, кабинет и сотрудника.');
+                return;
+            }
+
+            if (!isAdmin() && employee !== currentUser) {
+                alert('Вы можете создавать заказы только от своего имени!');
+                return;
+            }
+
+            const orderData = { Дата: date, Кабинет: cabinet, Сотрудник: employee };
+            let total = 0;
+            const selects = document.querySelectorAll('.dish-select');
+            for (let i = 0; i < 5; i++) {
+                const dish = selects[i].value || '';
+                orderData[`Блюдо_${i+1}`] = dish;
+                total += menu[dish] || 0;
+            }
+            orderData.Сумма = total;
+
+            if (total > 520) {
+                alert('Сумма заказа превышает 520 ₽!');
+                return;
+            }
+
+            if (editingRowIndex !== null) {
+                orderData._rowIndex = editingRowIndex;
+            }
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'saveOrder', data: orderData })
+                });
+                closeModal();
+                alert('✅ Заказ сохранён!');
+                setTimeout(loadData, 1000);
+            } catch (e) {
+                alert('❌ Ошибка сохранения. Попробуйте ещё раз.');
+                console.error(e);
+            }
+        }
+
+        // ============================================================
+        // УДАЛЕНИЕ ЗАКАЗА
+        // ============================================================
+        async function deleteOrder(index) {
+            const order = orders[index];
+            if (!order) return;
+            
+            if (!isAdmin() && order.Сотрудник !== currentUser) {
+                alert('Вы можете удалять только свои заказы!');
+                return;
+            }
+            
+            if (!confirm(`Удалить заказ ${order.Сотрудник}?`)) return;
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteOrder', rowIndex: index })
+                });
+                alert('🗑️ Заказ удалён');
+                setTimeout(loadData, 1000);
+            } catch (e) {
+                alert('❌ Ошибка удаления');
+                console.error(e);
+            }
+        }
+
+        // ============================================================
+        // УПРАВЛЕНИЕ МЕНЮ
+        // ============================================================
+        function openMenuModal() {
+            renderMenuList();
+            document.getElementById('menuModal').classList.add('open');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('menuModal').classList.remove('open');
+            loadData();
+        }
+
+        function renderMenuList() {
+            const container = document.getElementById('menuList');
+            const entries = Object.entries(menu).sort((a, b) => a[0].localeCompare(b[0]));
+            if (entries.length === 0) {
+                container.innerHTML = '<div style="color:#999;">Меню пусто</div>';
+                return;
+            }
+            container.innerHTML = entries.map(([name, price]) => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee;">
+                    <span style="flex:1;">${name}</span>
+                    <span style="min-width:60px;">${price} ₽</span>
+                    <button class="btn btn-danger" style="font-size:12px; padding:2px 10px;" onclick="deleteDish('${name}')">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteDish(name) {
+            if (!confirm(`Удалить блюдо "${name}"?`)) return;
+            alert('Для удаления блюда откройте лист "Меню" в Google Таблице и удалите строку вручную.\nПосле этого нажмите "Обновить" в приложении.');
+            await loadData();
+            renderMenuList();
+        }
+
+        async function addDish() {
+            const name = document.getElementById('newDishName').value.trim();
+            const price = parseInt(document.getElementById('newDishPrice').value);
+            if (!name || isNaN(price) || price < 0) {
+                alert('Введите название и цену');
+                return;
+            }
+            if (menu[name]) {
+                alert('Такое блюдо уже есть');
+                return;
+            }
+            alert('Добавьте новое блюдо в лист "Меню" в Google Таблице вручную.\nПосле этого нажмите "Обновить" в приложении.');
+            document.getElementById('newDishName').value = '';
+            document.getElementById('newDishPrice').value = '';
+            await loadData();
+            renderMenuList();
+        }
+
+        // ============================================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Проверяем, не открыт ли файл локально
+            if (window.location.protocol === 'file:') {
+                document.getElementById('ordersContainer').innerHTML = `
+                    <div class="empty">
+                        ⚠️ Файл открыт локально (file://).<br>
+                        Для работы приложения откройте его через:<br>
+                        • Google Диск<br>
+                        • Telegram<br>
+                        • Локальный сервер (например, Live Server)
+                    </div>
+                `;
+                return;
+            }
+
+            await getCurrentUser();
+            await loadData();
+
+            if (currentUser) {
+                console.log(`👋 Привет, ${currentUser}${isAdmin() ? ' (администратор)' : ''}`);
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const filterDate = document.getElementById('filterDate');
+            if (filterDate) {
+                filterDate.value = today;
+                currentFilterDate = today;
+            }
+
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('open');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
