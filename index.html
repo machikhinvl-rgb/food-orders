@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Заказ еды</title>
     <style>
-        /* Базовые стили */
+        /* ===== СТИЛИ (без изменений) ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -23,6 +23,14 @@
             gap: 8px;
         }
         .header h1 { font-size: 20px; font-weight: 700; }
+        .admin-badge {
+            background: #ffd166;
+            color: #1a1a2e;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+        }
         .filter-section {
             background: white;
             padding: 16px;
@@ -62,7 +70,10 @@
         .btn-success:hover { background: #05b88a; }
         .btn-danger { background: #ef476f; }
         .btn-danger:hover { background: #d63d62; }
+        .btn-warning { background: #ffd166; color: #1a1a2e; }
+        .btn-warning:hover { background: #e6bc5c; }
         .btn-block { width: 100%; margin-top: 8px; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
         .week-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
@@ -134,6 +145,12 @@
             min-width: 50px;
             text-align: right;
         }
+        .admin-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
         .loading { text-align: center; padding: 40px 0; color: #777; }
         .empty { text-align: center; padding: 40px 0; color: #999; }
         .toast {
@@ -154,6 +171,29 @@
         .toast.show { opacity: 1; }
         .toast.success { background: #06d6a0; }
         .toast.error { background: #ef476f; }
+        .order-list {
+            margin-top: 16px;
+        }
+        .order-item {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .order-item .info {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 14px;
+        }
+        .order-item .info .date { color: #777; }
+        .order-item .info .dishes { font-weight: 500; }
         @media (max-width: 480px) {
             .week-grid { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 4px; }
             .day-btn { padding: 6px 2px; font-size: 10px; }
@@ -165,10 +205,12 @@
 
     <div class="header">
         <h1>🍱 Заказ еды</h1>
-        <button class="btn" onclick="location.reload()">🔄 Обновить</button>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span id="userBadge" style="font-size:14px; color:#555;"></span>
+            <button class="btn" onclick="location.reload()">🔄 Обновить</button>
+        </div>
     </div>
 
-    <!-- Фильтры -->
     <div class="filter-section">
         <label for="cabinetSelect">🏢 Кабинет</label>
         <select id="cabinetSelect" onchange="onCabinetChange()">
@@ -180,26 +222,45 @@
             <option value="">— Сначала выберите кабинет —</option>
         </select>
 
-        <button class="btn btn-success btn-block" onclick="saveWeekOrders()">💾 Сохранить неделю</button>
+        <!-- Административные кнопки (видны только админам) -->
+        <div id="adminPanel" style="display:none; margin-top:8px;">
+            <button class="btn btn-warning btn-block" onclick="openGoogleSheet()">📊 Открыть таблицу</button>
+            <button class="btn btn-success btn-block" onclick="saveWeekOrders()">💾 Сохранить неделю</button>
+            <button class="btn btn-danger btn-block" onclick="clearAllOrders()">🗑️ Очистить все заказы</button>
+        </div>
+
+        <!-- Кнопка сохранения для обычных пользователей -->
+        <button class="btn btn-success btn-block" id="saveBtnUser" onclick="saveWeekOrders()">💾 Сохранить неделю</button>
     </div>
 
-    <!-- Выбор недели -->
     <div id="weekSelector" style="display:none; margin-bottom:16px;">
         <label style="font-weight:500; font-size:14px; color:#555;">📅 Выберите день для заказа:</label>
         <div class="week-grid" id="weekGrid"></div>
     </div>
 
-    <!-- Контейнер для заказов на день -->
     <div id="dayOrdersContainer"></div>
 
-    <!-- Toast уведомления -->
+    <!-- Список всех заказов (для админов) -->
+    <div id="allOrdersContainer" style="display:none; margin-top:16px;">
+        <h3 style="font-size:16px; margin-bottom:12px;">📋 Все заказы</h3>
+        <div id="allOrdersList"></div>
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script>
         // ============================================================
-        // ⚠️ ВСТАВЬТЕ ВАШУ ССЫЛКУ НА СКРИПТ
+        // ⚠️ ВАЖНО: ЗАМЕНИТЕ НА ВАШУ ССЫЛКУ НА СКРИПТ
         // ============================================================
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM2gvdxp8IM_sWNq8QvfRyVwf6etXmokSH_yJ827vJiilsZ6dgw11zo7uNXEGMV8MkfA/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/ВАША_ССЫЛКА/exec';
+
+        // ============================================================
+        // 🔐 СПИСОК АДМИНИСТРАТОРОВ (укажите почты или имена)
+        // ============================================================
+        const ADMIN_LIST = [
+            'machikhin.vl@mailbox366.com',  // ваша почта
+            // 'ekaterinapifagor12@gmail.com',        // пример: почта коллеги
+        ];
 
         // ============================================================
         // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
@@ -210,8 +271,55 @@
         let cabinets = [];
         let currentCabinet = '';
         let currentUser = '';
+        let currentUserEmail = '';
         let selectedDate = '';
-        let weekOrders = {}; // { '2026-07-13': { dishes: [...], total: 0 } }
+        let weekOrders = {};
+        let isAdmin = false;
+
+        // ============================================================
+        // ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА
+        // ============================================================
+        async function checkAdmin() {
+            try {
+                // Пробуем получить email пользователя через Google API
+                const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUserEmail = data.email || '';
+                    isAdmin = ADMIN_LIST.includes(currentUserEmail);
+                } else {
+                    // Если не удалось получить email — пробуем по имени
+                    const savedName = sessionStorage.getItem('currentUser');
+                    if (savedName) {
+                        // Проверяем, есть ли имя в списке администраторов (если указаны имена)
+                        isAdmin = ADMIN_LIST.includes(savedName);
+                    }
+                }
+            } catch (e) {
+                // Если Google API недоступен — проверяем по сохранённому имени
+                const savedName = sessionStorage.getItem('currentUser');
+                if (savedName) {
+                    isAdmin = ADMIN_LIST.includes(savedName);
+                }
+            }
+
+            // Показываем/скрываем админ-панель
+            const adminPanel = document.getElementById('adminPanel');
+            const saveBtnUser = document.getElementById('saveBtnUser');
+            const allOrdersContainer = document.getElementById('allOrdersContainer');
+
+            if (isAdmin) {
+                adminPanel.style.display = 'block';
+                saveBtnUser.style.display = 'none';
+                allOrdersContainer.style.display = 'block';
+                document.getElementById('userBadge').innerHTML = '👑 Администратор';
+            } else {
+                adminPanel.style.display = 'none';
+                saveBtnUser.style.display = 'block';
+                allOrdersContainer.style.display = 'none';
+                document.getElementById('userBadge').textContent = currentUser || 'Гость';
+            }
+        }
 
         // ============================================================
         // ЗАГРУЗКА ДАННЫХ
@@ -230,31 +338,25 @@
                 const employeesJson = await employeesRes.json();
                 const cabinetsJson = await cabinetsRes.json();
 
-                if (ordersJson.success && Array.isArray(ordersJson.data)) {
-                    orders = ordersJson.data;
-                } else {
-                    orders = [];
-                }
+                if (ordersJson.success && Array.isArray(ordersJson.data)) orders = ordersJson.data;
+                else orders = [];
 
-                if (menuJson.success && typeof menuJson.data === 'object') {
-                    menu = menuJson.data;
-                } else {
-                    menu = {};
-                }
+                if (menuJson.success && typeof menuJson.data === 'object') menu = menuJson.data;
+                else menu = {};
 
-                if (employeesJson.success && Array.isArray(employeesJson.data)) {
-                    employees = employeesJson.data;
-                } else {
-                    employees = [];
-                }
+                if (employeesJson.success && Array.isArray(employeesJson.data)) employees = employeesJson.data;
+                else employees = [];
 
-                if (cabinetsJson.success && Array.isArray(cabinetsJson.data)) {
-                    cabinets = cabinetsJson.data;
-                } else {
-                    cabinets = [];
-                }
+                if (cabinetsJson.success && Array.isArray(cabinetsJson.data)) cabinets = cabinetsJson.data;
+                else cabinets = [];
 
                 populateCabinets();
+                
+                // Если админ — показываем все заказы
+                if (isAdmin) {
+                    renderAllOrders();
+                }
+                
                 console.log('✅ Данные загружены');
             } catch (e) {
                 console.error('Ошибка загрузки:', e);
@@ -263,7 +365,7 @@
         }
 
         // ============================================================
-        // ЗАПОЛНЕНИЕ СПИСКОВ
+        // ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений из предыдущей версии)
         // ============================================================
         function populateCabinets() {
             const select = document.getElementById('cabinetSelect');
@@ -293,7 +395,6 @@
                 });
             }
             
-            // Сброс выбранного пользователя
             currentUser = '';
             document.getElementById('weekSelector').style.display = 'none';
             document.getElementById('dayOrdersContainer').innerHTML = '';
@@ -311,9 +412,6 @@
             }
         }
 
-        // ============================================================
-        // ИНИЦИАЛИЗАЦИЯ НЕДЕЛИ
-        // ============================================================
         function initWeek() {
             if (!currentUser) return;
             
@@ -321,7 +419,6 @@
             const weekContainer = document.getElementById('weekGrid');
             weekContainer.innerHTML = '';
             
-            // Загружаем сохранённые заказы на неделю
             weekOrders = getWeekOrdersFromStorage();
 
             weekDates.forEach(date => {
@@ -345,7 +442,6 @@
 
             document.getElementById('weekSelector').style.display = 'block';
             
-            // Если нет выбранного дня — выбираем первый день недели (сегодня или ближайший)
             if (!selectedDate) {
                 const today = new Date().toISOString().split('T')[0];
                 const weekDatesStr = weekDates.map(d => d.toISOString().split('T')[0]);
@@ -383,7 +479,6 @@
                 } catch (e) {}
             }
             
-            // Инициализируем из существующих заказов
             const weekDates = getWeekDates();
             const result = {};
             weekDates.forEach(date => {
@@ -404,13 +499,9 @@
             return result;
         }
 
-        // ============================================================
-        // ВЫБОР ДНЯ
-        // ============================================================
         function selectDay(dateStr) {
             selectedDate = dateStr;
             
-            // Обновляем активный день
             document.querySelectorAll('.day-btn').forEach(btn => {
                 btn.classList.remove('active');
                 const btnDate = btn.querySelector('.date-num')?.textContent;
@@ -423,9 +514,6 @@
             renderDayOrders(dateStr);
         }
 
-        // ============================================================
-        // ОТОБРАЖЕНИЕ ЗАКАЗОВ НА ДЕНЬ
-        // ============================================================
         function renderDayOrders(dateStr) {
             const container = document.getElementById('dayOrdersContainer');
             const dateObj = new Date(dateStr);
@@ -468,7 +556,6 @@
 
             container.innerHTML = html;
 
-            // Обновляем цены для всех селектов
             document.querySelectorAll('.dish-select').forEach(sel => {
                 const date = sel.dataset.date;
                 const index = parseInt(sel.dataset.index);
@@ -490,7 +577,6 @@
                 if (priceSpan) priceSpan.textContent = price + ' ₽';
             });
             
-            // Обновляем итог в карточке
             const card = document.querySelector(`.day-card`);
             if (card) {
                 const totalSpan = card.querySelector('.total');
@@ -500,11 +586,8 @@
                 }
             }
 
-            // Сохраняем в weekOrders и sessionStorage
             weekOrders[dateStr] = { dishes, total };
             sessionStorage.setItem(`weekOrders_${currentUser}`, JSON.stringify(weekOrders));
-            
-            // Обновляем отображение в календаре
             updateWeekSummary();
         }
 
@@ -533,16 +616,12 @@
             });
         }
 
-        // ============================================================
-        // СОХРАНЕНИЕ НЕДЕЛИ
-        // ============================================================
         async function saveWeekOrders() {
             if (!currentUser) {
                 showToast('Выберите сотрудника!', 'error');
                 return;
             }
 
-            // Сохраняем текущий день в sessionStorage
             sessionStorage.setItem(`weekOrders_${currentUser}`, JSON.stringify(weekOrders));
 
             let hasErrors = false;
@@ -591,6 +670,124 @@
 
             await loadData();
             initWeek();
+            if (isAdmin) renderAllOrders();
+        }
+
+        // ============================================================
+        // АДМИНИСТРАТОРСКИЕ ФУНКЦИИ
+        // ============================================================
+
+        // Открыть Google Таблицу
+        function openGoogleSheet() {
+            // Получаем ID таблицы из ссылки на скрипт
+            // Или просто открываем таблицу по известной ссылке
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/1iGENcTfUNZDRrKylCeB1dd4enOjVNiDesXVbpee35_c/edit'; // Замените на вашу ссылку
+            window.open(sheetUrl, '_blank');
+        }
+
+        // Показать все заказы (для админа)
+        function renderAllOrders() {
+            const container = document.getElementById('allOrdersList');
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div class="empty">📭 Нет заказов</div>';
+                return;
+            }
+
+            // Сортируем по дате (сначала новые)
+            const sorted = [...orders].sort((a, b) => {
+                return (b.Дата || '').localeCompare(a.Дата || '');
+            });
+
+            container.innerHTML = sorted.map((order, idx) => {
+                const dishes = [];
+                for (let i = 1; i <= 5; i++) {
+                    const dish = order[`Блюдо_${i}`];
+                    if (dish && dish.trim() !== '') {
+                        dishes.push(dish);
+                    }
+                }
+                const dishesStr = dishes.join(', ') || '—';
+                const realIndex = orders.indexOf(order);
+                let dateStr = order.Дата || '—';
+                if (dateStr && dateStr.includes('T')) {
+                    try {
+                        const d = new Date(dateStr);
+                        if (!isNaN(d.getTime())) {
+                            dateStr = d.toLocaleDateString('ru-RU');
+                        }
+                    } catch (e) {}
+                }
+
+                return `
+                    <div class="order-item">
+                        <div class="info">
+                            <span><strong>${order.Сотрудник || '—'}</strong></span>
+                            <span class="date">${dateStr}</span>
+                            <span class="dishes">${dishesStr}</span>
+                            <span><strong>${order.Сумма || 0} ₽</strong></span>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteOrder(${realIndex})">🗑️</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Удалить заказ (для админа)
+        async function deleteOrder(index) {
+            if (!isAdmin) {
+                showToast('У вас нет прав для удаления заказов', 'error');
+                return;
+            }
+            
+            const order = orders[index];
+            if (!order) return;
+            
+            if (!confirm(`Удалить заказ ${order.Сотрудник} на ${order.Дата}?`)) return;
+            
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteOrder', rowIndex: index })
+                });
+                showToast('🗑️ Заказ удалён', 'success');
+                await loadData();
+                if (isAdmin) renderAllOrders();
+                initWeek();
+            } catch (e) {
+                showToast('❌ Ошибка удаления', 'error');
+                console.error(e);
+            }
+        }
+
+        // Очистить все заказы (только для админа!)
+        async function clearAllOrders() {
+            if (!isAdmin) {
+                showToast('У вас нет прав для этого действия', 'error');
+                return;
+            }
+            
+            if (!confirm('⚠️ ВНИМАНИЕ! Это действие удалит ВСЕ заказы из таблицы. Продолжить?')) return;
+            if (!confirm('Вы уверены? Это необратимо!')) return;
+
+            let deleted = 0;
+            for (let i = orders.length - 1; i >= 0; i--) {
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'deleteOrder', rowIndex: i })
+                    });
+                    deleted++;
+                } catch (e) {
+                    console.error('Ошибка удаления:', e);
+                }
+            }
+
+            showToast(`🗑️ Удалено ${deleted} заказов`, 'success');
+            await loadData();
+            if (isAdmin) renderAllOrders();
+            initWeek();
         }
 
         // ============================================================
@@ -611,13 +808,12 @@
         // ИНИЦИАЛИЗАЦИЯ
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
+            await checkAdmin();
             await loadData();
             
-            // Восстанавливаем выбранного пользователя
             const savedUser = sessionStorage.getItem('currentUser');
             if (savedUser) {
                 const userSelect = document.getElementById('userSelect');
-                // Ждём, пока заполнятся списки
                 setTimeout(() => {
                     for (let opt of userSelect.options) {
                         if (opt.value === savedUser) {
@@ -636,6 +832,9 @@
         window.selectDay = selectDay;
         window.updateDayTotal = updateDayTotal;
         window.saveWeekOrders = saveWeekOrders;
+        window.deleteOrder = deleteOrder;
+        window.clearAllOrders = clearAllOrders;
+        window.openGoogleSheet = openGoogleSheet;
         window.showToast = showToast;
     </script>
 </body>
