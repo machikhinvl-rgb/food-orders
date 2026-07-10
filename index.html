@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Заказ еды</title>
+    <!-- Подключаем Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client"></script>
     <style>
-        /* ===== СТИЛИ ===== */
+        /* ===== СТИЛИ (без изменений) ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -74,6 +76,10 @@
         .btn-warning:hover { background: #e6bc5c; }
         .btn-block { width: 100%; margin-top: 8px; }
         .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .gsi-material-button {
+            width: 100%;
+            margin-top: 8px;
+        }
         .week-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
@@ -231,6 +237,20 @@
 
         <!-- Кнопка сохранения для обычных пользователей -->
         <button class="btn btn-success btn-block" id="saveBtnUser" onclick="saveWeekOrders()">💾 Сохранить неделю</button>
+
+        <!-- Кнопка входа через Google -->
+        <div id="g_id_onload"
+             data-client_id="32555940559.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
     </div>
 
     <div id="weekSelector" style="display:none; margin-bottom:16px;">
@@ -255,7 +275,7 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuZaxwgxDr6YhdPgn79ytPKFG5WnciDlwCbNCiWDErtf3TF4CLSoGNwJwLqid9BSl_gA/exec';
 
         // ============================================================
-        // 🔐 СПИСОК АДМИНИСТРАТОРОВ (только почты)
+        // 🔐 СПИСОК АДМИНИСТРАТОРОВ (почты)
         // ============================================================
         const ADMIN_LIST = [
             'machikhin.vl@mailbox366.com',
@@ -277,28 +297,28 @@
         let isAdmin = false;
 
         // ============================================================
-        // ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА (только по email)
+        // ОБРАБОТКА ВХОДА ЧЕРЕЗ GOOGLE IDENTITY SERVICES
         // ============================================================
-        async function checkAdmin() {
-            let adminEmail = '';
+        function handleCredentialResponse(response) {
+            // Декодируем JWT токен, чтобы получить email
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            const email = payload.email;
+            console.log('📧 Email из Google Identity:', email);
             
-            try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
-                if (res.ok) {
-                    const data = await res.json();
-                    adminEmail = data.email || '';
-                    console.log('📧 Email пользователя:', adminEmail);
-                } else {
-                    console.warn('⚠️ Не удалось получить email (статус ' + res.status + ')');
-                }
-            } catch (e) {
-                console.warn('⚠️ Ошибка при получении email:', e.message);
+            if (email) {
+                currentUserEmail = email;
+                isAdmin = ADMIN_LIST.includes(email);
+                updateAdminUI();
+                showToast(`✅ Вход выполнен: ${email}`, 'success');
+            } else {
+                showToast('❌ Не удалось получить email', 'error');
             }
+        }
 
-            isAdmin = ADMIN_LIST.includes(adminEmail);
-            currentUserEmail = adminEmail;
-
-            // Обновляем интерфейс
+        // ============================================================
+        // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА В ЗАВИСИМОСТИ ОТ ПРАВ
+        // ============================================================
+        function updateAdminUI() {
             const adminPanel = document.getElementById('adminPanel');
             const saveBtnUser = document.getElementById('saveBtnUser');
             const allOrdersContainer = document.getElementById('allOrdersContainer');
@@ -308,17 +328,14 @@
                 adminPanel.style.display = 'block';
                 saveBtnUser.style.display = 'none';
                 allOrdersContainer.style.display = 'block';
-                userBadge.innerHTML = `👑 Администратор (${adminEmail})`;
+                userBadge.innerHTML = `👑 Администратор (${currentUserEmail})`;
                 console.log('✅ Права администратора подтверждены');
+                if (orders.length > 0) renderAllOrders();
             } else {
                 adminPanel.style.display = 'none';
                 saveBtnUser.style.display = 'block';
                 allOrdersContainer.style.display = 'none';
-                if (adminEmail) {
-                    userBadge.textContent = `👤 ${adminEmail}`;
-                } else {
-                    userBadge.textContent = '👤 Не авторизован';
-                }
+                userBadge.textContent = `👤 ${currentUserEmail || 'Гость'}`;
                 console.log('👤 Обычный пользователь');
             }
         }
@@ -362,7 +379,7 @@
         }
 
         // ============================================================
-        // ПОПУЛЯЦИЯ СПИСКОВ
+        // ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений)
         // ============================================================
         function populateCabinets() {
             const select = document.getElementById('cabinetSelect');
@@ -409,9 +426,6 @@
             }
         }
 
-        // ============================================================
-        // НЕДЕЛЯ И ЗАКАЗЫ
-        // ============================================================
         function initWeek() {
             if (!currentUser) return;
             
@@ -673,12 +687,8 @@
             if (isAdmin) renderAllOrders();
         }
 
-        // ============================================================
-        // АДМИНИСТРАТОРСКИЕ ФУНКЦИИ
-        // ============================================================
-
         function openGoogleSheet() {
-            const sheetUrl = 'https://docs.google.com/spreadsheets/d/1iGENcTfUNZDRrKylCeB1dd4enOjVNiDesXVbpee35_c/edit'; // Замените на вашу ссылку
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/1iGENcTfUNZDRrKylCeB1dd4enOjVNiDesXVbpee35_c/edit';
             window.open(sheetUrl, '_blank');
         }
 
@@ -783,9 +793,6 @@
             initWeek();
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -801,7 +808,14 @@
         // ИНИЦИАЛИЗАЦИЯ
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
-            await checkAdmin();
+            // Проверяем, есть ли уже сохранённый email
+            const savedEmail = sessionStorage.getItem('userEmail');
+            if (savedEmail) {
+                currentUserEmail = savedEmail;
+                isAdmin = ADMIN_LIST.includes(savedEmail);
+                updateAdminUI();
+            }
+            
             await loadData();
             
             const savedUser = sessionStorage.getItem('currentUser');
@@ -829,6 +843,7 @@
         window.clearAllOrders = clearAllOrders;
         window.openGoogleSheet = openGoogleSheet;
         window.showToast = showToast;
+        window.handleCredentialResponse = handleCredentialResponse;
     </script>
 </body>
 </html>
