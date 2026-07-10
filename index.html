@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Заказ еды</title>
     <style>
-        /* ===== СТИЛИ (без изменений) ===== */
+        /* ===== СТИЛИ ===== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -250,16 +250,16 @@
 
     <script>
         // ============================================================
-        // ⚠️ ВАЖНО: ЗАМЕНИТЕ НА ВАШУ ССЫЛКУ НА СКРИПТ
+        // ⚠️ ВСТАВЬТЕ ВАШУ ССЫЛКУ НА СКРИПТ
         // ============================================================
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuZaxwgxDr6YhdPgn79ytPKFG5WnciDlwCbNCiWDErtf3TF4CLSoGNwJwLqid9BSl_gA/exec';
 
         // ============================================================
-        // 🔐 СПИСОК АДМИНИСТРАТОРОВ (укажите почты или имена)
+        // 🔐 СПИСОК АДМИНИСТРАТОРОВ (только почты)
         // ============================================================
         const ADMIN_LIST = [
-            'machikhin.vl@mailbox366.com',  // ваша почта
-            // 'ekaterinapifagor12@gmail.com',        // пример: почта коллеги
+            'machikhin.vl@mailbox366.com',
+            // 'ekaterinapifagor12@gmail.com',
         ];
 
         // ============================================================
@@ -276,63 +276,53 @@
         let weekOrders = {};
         let isAdmin = false;
 
-       // ============================================================
-// 🔐 СПИСОК АДМИНИСТРАТОРОВ (только почты)
-// ============================================================
-const ADMIN_LIST = [
-    'machikhin.vl@mailbox366.com',   // ← ваша почта
-    // 'ekaterinapifagor12@gmail.com',          // ← почта другого админа
-];
+        // ============================================================
+        // ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА (только по email)
+        // ============================================================
+        async function checkAdmin() {
+            let adminEmail = '';
+            
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
+                if (res.ok) {
+                    const data = await res.json();
+                    adminEmail = data.email || '';
+                    console.log('📧 Email пользователя:', adminEmail);
+                } else {
+                    console.warn('⚠️ Не удалось получить email (статус ' + res.status + ')');
+                }
+            } catch (e) {
+                console.warn('⚠️ Ошибка при получении email:', e.message);
+            }
 
-// ============================================================
-// ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА (только по email)
-// ============================================================
-async function checkAdmin() {
-    let adminEmail = '';
-    
-    // Пытаемся получить email через Google API
-    try {
-        const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
-        if (res.ok) {
-            const data = await res.json();
-            adminEmail = data.email || '';
-            console.log('📧 Email пользователя:', adminEmail);
-        } else {
-            console.warn('⚠️ Не удалось получить email (статус ' + res.status + ')');
-            console.warn('👉 Проверьте, что вы залогинены в Google в этом браузере');
+            isAdmin = ADMIN_LIST.includes(adminEmail);
+            currentUserEmail = adminEmail;
+
+            // Обновляем интерфейс
+            const adminPanel = document.getElementById('adminPanel');
+            const saveBtnUser = document.getElementById('saveBtnUser');
+            const allOrdersContainer = document.getElementById('allOrdersContainer');
+            const userBadge = document.getElementById('userBadge');
+
+            if (isAdmin) {
+                adminPanel.style.display = 'block';
+                saveBtnUser.style.display = 'none';
+                allOrdersContainer.style.display = 'block';
+                userBadge.innerHTML = `👑 Администратор (${adminEmail})`;
+                console.log('✅ Права администратора подтверждены');
+            } else {
+                adminPanel.style.display = 'none';
+                saveBtnUser.style.display = 'block';
+                allOrdersContainer.style.display = 'none';
+                if (adminEmail) {
+                    userBadge.textContent = `👤 ${adminEmail}`;
+                } else {
+                    userBadge.textContent = '👤 Не авторизован';
+                }
+                console.log('👤 Обычный пользователь');
+            }
         }
-    } catch (e) {
-        console.warn('⚠️ Ошибка при получении email:', e.message);
-        console.warn('👉 Проверьте интернет-соединение и настройки браузера');
-    }
 
-    // Проверяем, есть ли email в списке администраторов
-    isAdmin = ADMIN_LIST.includes(adminEmail);
-
-    // Обновляем интерфейс
-    const adminPanel = document.getElementById('adminPanel');
-    const saveBtnUser = document.getElementById('saveBtnUser');
-    const allOrdersContainer = document.getElementById('allOrdersContainer');
-    const userBadge = document.getElementById('userBadge');
-
-    if (isAdmin) {
-        adminPanel.style.display = 'block';
-        saveBtnUser.style.display = 'none';
-        allOrdersContainer.style.display = 'block';
-        userBadge.innerHTML = `👑 Администратор (${adminEmail})`;
-        console.log('✅ Права администратора подтверждены');
-    } else {
-        adminPanel.style.display = 'none';
-        saveBtnUser.style.display = 'block';
-        allOrdersContainer.style.display = 'none';
-        if (adminEmail) {
-            userBadge.textContent = `👤 ${adminEmail}`;
-        } else {
-            userBadge.textContent = '👤 Не авторизован';
-        }
-        console.log('👤 Обычный пользователь');
-    }
-}
         // ============================================================
         // ЗАГРУЗКА ДАННЫХ
         // ============================================================
@@ -363,12 +353,7 @@ async function checkAdmin() {
                 else cabinets = [];
 
                 populateCabinets();
-                
-                // Если админ — показываем все заказы
-                if (isAdmin) {
-                    renderAllOrders();
-                }
-                
+                if (isAdmin) renderAllOrders();
                 console.log('✅ Данные загружены');
             } catch (e) {
                 console.error('Ошибка загрузки:', e);
@@ -377,7 +362,7 @@ async function checkAdmin() {
         }
 
         // ============================================================
-        // ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений из предыдущей версии)
+        // ПОПУЛЯЦИЯ СПИСКОВ
         // ============================================================
         function populateCabinets() {
             const select = document.getElementById('cabinetSelect');
@@ -424,6 +409,9 @@ async function checkAdmin() {
             }
         }
 
+        // ============================================================
+        // НЕДЕЛЯ И ЗАКАЗЫ
+        // ============================================================
         function initWeek() {
             if (!currentUser) return;
             
@@ -689,15 +677,11 @@ async function checkAdmin() {
         // АДМИНИСТРАТОРСКИЕ ФУНКЦИИ
         // ============================================================
 
-        // Открыть Google Таблицу
         function openGoogleSheet() {
-            // Получаем ID таблицы из ссылки на скрипт
-            // Или просто открываем таблицу по известной ссылке
             const sheetUrl = 'https://docs.google.com/spreadsheets/d/1iGENcTfUNZDRrKylCeB1dd4enOjVNiDesXVbpee35_c/edit'; // Замените на вашу ссылку
             window.open(sheetUrl, '_blank');
         }
 
-        // Показать все заказы (для админа)
         function renderAllOrders() {
             const container = document.getElementById('allOrdersList');
             if (!orders || orders.length === 0) {
@@ -705,7 +689,6 @@ async function checkAdmin() {
                 return;
             }
 
-            // Сортируем по дате (сначала новые)
             const sorted = [...orders].sort((a, b) => {
                 return (b.Дата || '').localeCompare(a.Дата || '');
             });
@@ -744,7 +727,6 @@ async function checkAdmin() {
             }).join('');
         }
 
-        // Удалить заказ (для админа)
         async function deleteOrder(index) {
             if (!isAdmin) {
                 showToast('У вас нет прав для удаления заказов', 'error');
@@ -772,7 +754,6 @@ async function checkAdmin() {
             }
         }
 
-        // Очистить все заказы (только для админа!)
         async function clearAllOrders() {
             if (!isAdmin) {
                 showToast('У вас нет прав для этого действия', 'error');
@@ -803,7 +784,7 @@ async function checkAdmin() {
         }
 
         // ============================================================
-        // TOAST УВЕДОМЛЕНИЯ
+        // TOAST
         // ============================================================
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
@@ -838,7 +819,7 @@ async function checkAdmin() {
             }
         });
 
-        // Глобальные функции для onclick в HTML
+        // Глобальные функции для onclick
         window.onCabinetChange = onCabinetChange;
         window.onUserChange = onUserChange;
         window.selectDay = selectDay;
