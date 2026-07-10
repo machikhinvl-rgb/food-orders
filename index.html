@@ -276,51 +276,63 @@
         let weekOrders = {};
         let isAdmin = false;
 
-        // ============================================================
-        // ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА
-        // ============================================================
-        async function checkAdmin() {
-            try {
-                // Пробуем получить email пользователя через Google API
-                const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
-                if (res.ok) {
-                    const data = await res.json();
-                    currentUserEmail = data.email || '';
-                    isAdmin = ADMIN_LIST.includes(currentUserEmail);
-                } else {
-                    // Если не удалось получить email — пробуем по имени
-                    const savedName = sessionStorage.getItem('currentUser');
-                    if (savedName) {
-                        // Проверяем, есть ли имя в списке администраторов (если указаны имена)
-                        isAdmin = ADMIN_LIST.includes(savedName);
-                    }
-                }
-            } catch (e) {
-                // Если Google API недоступен — проверяем по сохранённому имени
-                const savedName = sessionStorage.getItem('currentUser');
-                if (savedName) {
-                    isAdmin = ADMIN_LIST.includes(savedName);
-                }
-            }
+       // ============================================================
+// 🔐 СПИСОК АДМИНИСТРАТОРОВ (только почты)
+// ============================================================
+const ADMIN_LIST = [
+    'machikhin.vl@mailbox366.com',   // ← ваша почта
+    // 'ekaterinapifagor12@gmail.com',          // ← почта другого админа
+];
 
-            // Показываем/скрываем админ-панель
-            const adminPanel = document.getElementById('adminPanel');
-            const saveBtnUser = document.getElementById('saveBtnUser');
-            const allOrdersContainer = document.getElementById('allOrdersContainer');
-
-            if (isAdmin) {
-                adminPanel.style.display = 'block';
-                saveBtnUser.style.display = 'none';
-                allOrdersContainer.style.display = 'block';
-                document.getElementById('userBadge').innerHTML = '👑 Администратор';
-            } else {
-                adminPanel.style.display = 'none';
-                saveBtnUser.style.display = 'block';
-                allOrdersContainer.style.display = 'none';
-                document.getElementById('userBadge').textContent = currentUser || 'Гость';
-            }
+// ============================================================
+// ОПРЕДЕЛЕНИЕ АДМИНИСТРАТОРА (только по email)
+// ============================================================
+async function checkAdmin() {
+    let adminEmail = '';
+    
+    // Пытаемся получить email через Google API
+    try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json');
+        if (res.ok) {
+            const data = await res.json();
+            adminEmail = data.email || '';
+            console.log('📧 Email пользователя:', adminEmail);
+        } else {
+            console.warn('⚠️ Не удалось получить email (статус ' + res.status + ')');
+            console.warn('👉 Проверьте, что вы залогинены в Google в этом браузере');
         }
+    } catch (e) {
+        console.warn('⚠️ Ошибка при получении email:', e.message);
+        console.warn('👉 Проверьте интернет-соединение и настройки браузера');
+    }
 
+    // Проверяем, есть ли email в списке администраторов
+    isAdmin = ADMIN_LIST.includes(adminEmail);
+
+    // Обновляем интерфейс
+    const adminPanel = document.getElementById('adminPanel');
+    const saveBtnUser = document.getElementById('saveBtnUser');
+    const allOrdersContainer = document.getElementById('allOrdersContainer');
+    const userBadge = document.getElementById('userBadge');
+
+    if (isAdmin) {
+        adminPanel.style.display = 'block';
+        saveBtnUser.style.display = 'none';
+        allOrdersContainer.style.display = 'block';
+        userBadge.innerHTML = `👑 Администратор (${adminEmail})`;
+        console.log('✅ Права администратора подтверждены');
+    } else {
+        adminPanel.style.display = 'none';
+        saveBtnUser.style.display = 'block';
+        allOrdersContainer.style.display = 'none';
+        if (adminEmail) {
+            userBadge.textContent = `👤 ${adminEmail}`;
+        } else {
+            userBadge.textContent = '👤 Не авторизован';
+        }
+        console.log('👤 Обычный пользователь');
+    }
+}
         // ============================================================
         // ЗАГРУЗКА ДАННЫХ
         // ============================================================
