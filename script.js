@@ -5,7 +5,7 @@
 // Впишите URL по мере подключения таблицы каждого офиса.
 // ============================================================
 const OFFICE_URLS = {
-  'Пифагор':    'https://script.google.com/macros/s/AKfycbw1pZ-iRY-U1FwU2T68IM_e8S67159cVCpVFfxKucTya-STEq41xU8Mwu0pPbQR7yjv/exec', // уже подключён и протестирован
+  'Пифагор':    'https://script.google.com/macros/s/AKfycbyox2Dg6jUgUgWChVmGhub4BSaWA5iPDOgTU9s8_MUsxjdG3qXSMQUo81GtIKd5OMgk/exec', // уже подключён и протестирован
   'Мойка':      '',
   'Средний пр': '',
   'Фонтанка':   '',
