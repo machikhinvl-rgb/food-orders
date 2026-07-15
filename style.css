@@ -1,0 +1,143 @@
+:root {
+  --bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --border: #e3e7ee;
+  --text: #1f2733;
+  --text-muted: #7c8797;
+  --blue: #2f6fed;
+  --blue-light: #eaf1ff;
+  --green: #16c79a;
+  --green-dark: #10a482;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.topbar-title { font-size: 18px; font-weight: 700; }
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+
+.field { display: block; margin-bottom: 12px; }
+.field-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+
+select, .btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+  background: #fff;
+  color: var(--text);
+}
+
+.btn {
+  cursor: pointer;
+  font-weight: 700;
+  border: none;
+  margin-top: 4px;
+}
+
+.btn-primary { background: var(--green); color: #fff; }
+.btn-primary:hover { background: var(--green-dark); }
+
+.btn-outline {
+  width: auto;
+  background: var(--blue);
+  color: #fff;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.status-msg { font-size: 13px; margin-top: 8px; min-height: 16px; color: var(--green-dark); }
+.status-msg.error { color: #d64545; }
+
+.day-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.day-tab {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 4px;
+  text-align: center;
+  cursor: pointer;
+  background: #fff;
+}
+
+.day-tab.active { border-color: var(--blue); background: var(--blue-light); }
+.day-tab .num { font-size: 18px; font-weight: 700; }
+.day-tab .dow { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+.day-tab .sum { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+.day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.day-total { color: var(--blue); }
+
+.slot-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.slot-row select { flex: 1; }
+
+.slot-qty {
+  width: 60px;
+  flex: none;
+  text-align: center;
+}
+
+.slot-price {
+  width: 70px;
+  flex: none;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+@media (max-width: 520px) {
+  .day-tabs { grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
+  .day-tab { padding: 6px 2px; }
+  .day-tab .num { font-size: 14px; }
+}
