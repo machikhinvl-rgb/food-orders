@@ -5,12 +5,12 @@
 // Впишите URL по мере подключения таблицы каждого офиса.
 // ============================================================
 const OFFICE_URLS = {
-  'Пифагор':    'https://script.google.com/macros/s/AKfycbwbhjN3voXok0dqnqmYJOxh0SkFQxnj8HqnNXMkMFCAO-nDa5ZLYPox-ADSgagCzas6/exec', // уже подключён и протестирован
-  'Мойка':      'https://script.google.com/macros/s/AKfycbwS74tTmabTazqfcdcvTOl3MggBVTUpzRXhBGTyUMWrya1hm1GyDT85mSoZYeUdNkRuDg/exec',
-  'Средний пр': 'https://script.google.com/macros/s/AKfycbwbhjN3voXok0dqnqmYJOxh0SkFQxnj8HqnNXMkMFCAO-nDa5ZLYPox-ADSgagCzas6/exec',
-  'Фонтанка':   'https://script.google.com/macros/s/AKfycbxGh-ZJQ0Do5AW3bc3MTbTqCSJ1n8WvsjG_2hnMKO1QOaE5ZtDiPsN0ZGzxBShZsP0zVQ/exec',
-  'Невский':    'https://script.google.com/macros/s/AKfycbxiZDoAUTqgw5WAZ010CWsU8ljcJvulhHPHQWOZe8-HddlE8wNuneZZWVa81r2Kq4Ug-g/exec',
-  'Тележная':   'https://script.google.com/macros/s/AKfycbyDWb8E-t99_J0MwGHk6uH6TIDyfFtraCSkiQ2P0vKegOzcgQp0QcAE9wE1R7BvzAmV/exec'
+  'Пифагор':    'ВСТАВЬТЕ_СЮДА_URL_ВЕБ_ПРИЛОЖЕНИЯ', // уже подключён и протестирован
+  'Мойка':      '',
+  'Средний пр': '',
+  'Фонтанка':   '',
+  'Невский':    '',
+  'Тележная':   ''
 };
 
 function currentGasUrl() {
@@ -275,7 +275,7 @@ async function saveWeek() {
         }))
       });
     }
-    const res = await apiPost({ cabinet: state.cabinet, employee: state.employee, days });
+    const res = await api('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, days }) });
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
