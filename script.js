@@ -110,9 +110,6 @@ function renderWeekToggle() {
   wrap.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => switchWeek(btn.dataset.parity));
   });
-
-  const current = state.bootstrapCache[state.parity];
-  $('weekRangeLabel').textContent = current ? weekRangeLabel(current) : '';
 }
 
 async function switchWeek(parity) {
@@ -201,6 +198,7 @@ async function loadEmployeeOrders() {
     renderDayTabs();
     selectDay(0);
     loadProfile(); // не блокируем основной интерфейс ожиданием профиля
+    loadShifts();
   } catch (err) {
     setStatus('Ошибка: ' + err.message, true);
   } finally {
@@ -226,6 +224,12 @@ function renderDayTabs() {
     tab.addEventListener('click', () => selectDay(i));
     wrap.appendChild(tab);
   });
+
+  // Заголовок недели — из тех же дат, что и вкладки (офисная таблица заказов),
+  // а не из меню, чтобы даты сверху и вкладки никогда не расходились.
+  if (days.length) {
+    $('weekRangeLabel').textContent = (days[0].date || '') + ' – ' + (days[6].date || '');
+  }
 }
 
 function dayTotal(dayIndex) {
@@ -428,6 +432,52 @@ function setLoginStatus(msg, isError) {
   el.className = 'status-msg' + (isError ? ' error' : '');
 }
 
+// ---------- КАЛЕНДАРЬ СМЕН ----------
+
+let shiftsState = [false, false, false, false, false, false, false];
+
+async function loadShifts() {
+  try {
+    const data = await api('getShifts', { cabinet: state.cabinet, employee: state.employee });
+    if (data.error) throw new Error(data.error);
+    shiftsState = data.days || [false, false, false, false, false, false, false];
+    renderShiftsToggle();
+  } catch (err) {
+    setShiftsStatus('Не удалось загрузить рабочие дни: ' + err.message, true);
+  }
+}
+
+function renderShiftsToggle() {
+  const wrap = $('shiftsToggle');
+  wrap.innerHTML = DOW_SHORT.map((label, i) =>
+    `<button type="button" data-day="${i}" class="${shiftsState[i] ? 'active' : ''}">${label}</button>`
+  ).join('');
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = Number(btn.dataset.day);
+      shiftsState[i] = !shiftsState[i];
+      btn.classList.toggle('active', shiftsState[i]);
+    });
+  });
+}
+
+function setShiftsStatus(msg, isError) {
+  const el = $('shiftsStatusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg' + (isError ? ' error' : '');
+}
+
+async function saveShifts() {
+  setShiftsStatus('Сохраняю…');
+  try {
+    const res = await api('saveShifts', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, days: shiftsState }) });
+    if (res.error) throw new Error(res.error);
+    setShiftsStatus('✅ Рабочие дни сохранены');
+  } catch (err) {
+    setShiftsStatus('Ошибка: ' + err.message, true);
+  }
+}
+
 // ---------- СОБЫТИЯ ----------
 
 $('officeSelect').addEventListener('change', onOfficeChanged);
@@ -435,6 +485,7 @@ $('cabinetSelect').addEventListener('change', (e) => renderEmployeesForCabinet(e
 $('employeeSelect').addEventListener('change', loadEmployeeOrders);
 $('saveWeekBtn').addEventListener('click', saveWeek);
 $('saveEmailBtn').addEventListener('click', saveEmail);
+$('saveShiftsBtn').addEventListener('click', saveShifts);
 $('refreshBtn').addEventListener('click', () => {
   if (state.parity) delete state.bootstrapCache[state.parity];
   loadBootstrap(state.parity);
