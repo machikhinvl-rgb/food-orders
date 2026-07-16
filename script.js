@@ -5,7 +5,7 @@
 // Впишите URL по мере подключения таблицы каждого офиса.
 // ============================================================
 const OFFICE_URLS = {
-  'Пифагор':    'ВСТАВЬТЕ_СЮДА_URL_ВЕБ_ПРИЛОЖЕНИЯ', // уже подключён и протестирован
+  'Пифагор':    'https://script.google.com/macros/s/AKfycbwbhjN3voXok0dqnqmYJOxh0SkFQxnj8HqnNXMkMFCAO-nDa5ZLYPox-ADSgagCzas6/exec', // уже подключён и протестирован
   'Мойка':      '',
   'Средний пр': '',
   'Фонтанка':   '',
@@ -15,7 +15,8 @@ const OFFICE_URLS = {
 
 function currentGasUrl() {
   const office = $('officeSelect') ? $('officeSelect').value : Object.keys(OFFICE_URLS)[0];
-  return OFFICE_URLS[office];
+  const url = OFFICE_URLS[office];
+  return (url && url.startsWith('https://script.google.com/')) ? url : null;
 }
 
 const SLOT_KEYS = ['SALAD', 'SOUP', 'HOT', 'SIDE', 'PASTRY', 'FREE1', 'FREE2'];
