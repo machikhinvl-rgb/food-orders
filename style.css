@@ -85,6 +85,7 @@ select, .btn {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  margin-bottom: 14px;
 }
 
 .week-toggle button {
@@ -143,6 +144,42 @@ select, .btn {
 .telegram-status.connected { color: var(--green-dark); font-weight: 600; }
 .telegram-status .btn { width: auto; margin-top: 0; }
 .telegram-status .muted { color: var(--text-muted); font-size: 13px; }
+
+.top-status { padding: 0 4px; }
+
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+}
+
+.user-bar span { font-weight: 600; font-size: 14px; }
+.user-bar .btn { width: auto; margin-top: 0; padding: 6px 12px; font-size: 13px; }
+
+.day-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.week-range-label {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.week-range-label::after {
+  content: ' ▾';
+}
 
 .day-tabs {
   display: grid;

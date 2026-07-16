@@ -15,15 +15,15 @@
     <button id="refreshBtn" class="btn btn-outline">🔄 Обновить</button>
   </header>
 
-  <section class="card">
+  <div id="statusMsg" class="status-msg top-status"></div>
+
+  <!-- ЭКРАН ВХОДА: показывается один раз, дальше выбор запоминается -->
+  <section class="card" id="loginCard">
+    <div class="field-label">👋 Давайте познакомимся</div>
+
     <label class="field">
       <span class="field-label">🏢 Офис</span>
       <select id="officeSelect"></select>
-    </label>
-
-    <label class="field">
-      <span class="field-label">📅 Неделя</span>
-      <div id="weekToggle" class="week-toggle"></div>
     </label>
 
     <label class="field">
@@ -36,44 +36,61 @@
       <select id="employeeSelect"><option value="">Сначала выберите кабинет</option></select>
     </label>
 
-    <button id="saveWeekBtn" class="btn btn-primary">💾 Сохранить неделю</button>
-
-    <div id="statusMsg" class="status-msg"></div>
-    <!-- Кнопка "Вход через Google" убрана: выбор кабинет+ФИО достаточен как идентификация -->
-
-  </section>
-
-  <section class="card" id="profileCard" style="display:none;">
-    <div class="field-label">🔔 Уведомления</div>
-
     <label class="field">
-      <span class="field-label">Email</span>
-      <div class="profile-row">
-        <input type="email" id="profileEmail" placeholder="you@example.com">
-        <button id="saveEmailBtn" class="btn btn-outline">Сохранить</button>
-      </div>
+      <span class="field-label">Email (для уведомлений, необязательно)</span>
+      <input type="email" id="loginEmail" placeholder="you@example.com">
     </label>
 
-    <div class="field">
-      <span class="field-label">Telegram</span>
-      <div id="telegramStatus"></div>
-    </div>
-
-    <div id="profileStatusMsg" class="status-msg"></div>
+    <button id="loginBtn" class="btn btn-primary">Войти</button>
+    <div id="loginStatusMsg" class="status-msg"></div>
   </section>
 
-  <section class="card">
-    <div class="field-label">📅 Выберите день для заказа:</div>
-    <div id="dayTabs" class="day-tabs"></div>
-  </section>
+  <!-- ОСНОВНОЙ ЭКРАН: показывается после входа -->
+  <div id="mainScreen" style="display:none;">
 
-  <section class="card day-detail">
-    <div class="day-detail-header">
-      <span id="dayTitle">—</span>
-      <span id="dayTotal" class="day-total">Итого: 0 ₽</span>
-    </div>
-    <div id="slotsList" class="slots-list"></div>
-  </section>
+    <section class="card user-bar">
+      <span id="userBarText"></span>
+      <button id="switchUserBtn" class="btn btn-outline">Сменить</button>
+    </section>
+
+    <section class="card">
+      <button type="button" id="daySectionHeader" class="day-section-header">
+        <span>📅 Выберите день/неделю для заказа</span>
+        <span id="weekRangeLabel" class="week-range-label"></span>
+      </button>
+      <div id="weekSwitcher" class="week-toggle" style="display:none;"></div>
+      <div id="dayTabs" class="day-tabs"></div>
+    </section>
+
+    <section class="card day-detail">
+      <div class="day-detail-header">
+        <span id="dayTitle">—</span>
+        <span id="dayTotal" class="day-total">Итого: 0 ₽</span>
+      </div>
+      <div id="slotsList" class="slots-list"></div>
+      <button id="saveWeekBtn" class="btn btn-primary" style="margin-top:14px;">💾 Сохранить неделю</button>
+    </section>
+
+    <section class="card" id="profileCard">
+      <div class="field-label">🔔 Уведомления</div>
+
+      <label class="field">
+        <span class="field-label">Email</span>
+        <div class="profile-row">
+          <input type="email" id="profileEmail" placeholder="you@example.com">
+          <button id="saveEmailBtn" class="btn btn-outline">Сохранить</button>
+        </div>
+      </label>
+
+      <div class="field">
+        <span class="field-label">Telegram</span>
+        <div id="telegramStatus"></div>
+      </div>
+
+      <div id="profileStatusMsg" class="status-msg"></div>
+    </section>
+
+  </div>
 
 </div>
 

@@ -78,12 +78,11 @@ async function onOfficeChanged() {
   localStorage.setItem('foodOrders.office', $('officeSelect').value);
   state.bootstrapCache = {};
   state.parity = null;
-  $('profileCard').style.display = 'none';
   if (!currentGasUrl()) {
     setStatus('Для этого офиса приложение ещё не подключено — выберите другой офис', true);
     $('cabinetSelect').innerHTML = '<option value="">—</option>';
     $('employeeSelect').innerHTML = '<option value="">—</option>';
-    $('weekToggle').innerHTML = '';
+    $('weekSwitcher').innerHTML = '';
     return;
   }
   await loadBootstrap(null); // null = сервер сам определит текущую неделю по дате
@@ -99,7 +98,7 @@ function weekRangeLabel(data) {
 }
 
 function renderWeekToggle() {
-  const wrap = $('weekToggle');
+  const wrap = $('weekSwitcher');
   const order = ['odd', 'even'];
   wrap.innerHTML = order.map(p => {
     const cached = state.bootstrapCache[p];
@@ -111,9 +110,13 @@ function renderWeekToggle() {
   wrap.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => switchWeek(btn.dataset.parity));
   });
+
+  const current = state.bootstrapCache[state.parity];
+  $('weekRangeLabel').textContent = current ? weekRangeLabel(current) : '';
 }
 
 async function switchWeek(parity) {
+  $('weekSwitcher').style.display = 'none'; // сворачиваем после выбора
   if (parity === state.parity) return;
   await loadBootstrap(parity);
 }
@@ -178,6 +181,7 @@ async function loadEmployeeOrders() {
 
   localStorage.setItem('foodOrders.cabinet.' + $('officeSelect').value, state.cabinet);
   localStorage.setItem('foodOrders.employee.' + state.cabinet, state.employee);
+  if (isSetupDone()) updateUserBar();
 
   setLoading(true);
   setStatus('Загрузка заказов…');
@@ -196,7 +200,6 @@ async function loadEmployeeOrders() {
     setStatus('');
     renderDayTabs();
     selectDay(0);
-    $('profileCard').style.display = '';
     loadProfile(); // не блокируем основной интерфейс ожиданием профиля
   } catch (err) {
     setStatus('Ошибка: ' + err.message, true);
@@ -397,6 +400,34 @@ async function connectTelegram() {
   }
 }
 
+// ---------- ЭКРАН ВХОДА / ОСНОВНОЙ ЭКРАН ----------
+
+function isSetupDone() {
+  return localStorage.getItem('foodOrders.setupDone') === 'true';
+}
+
+function showLoginScreen() {
+  $('loginCard').style.display = '';
+  $('mainScreen').style.display = 'none';
+}
+
+function showMainScreen() {
+  $('loginCard').style.display = 'none';
+  $('mainScreen').style.display = '';
+  updateUserBar();
+}
+
+function updateUserBar() {
+  const office = $('officeSelect').value;
+  $('userBarText').textContent = [office, state.cabinet, state.employee].filter(Boolean).join(' · ');
+}
+
+function setLoginStatus(msg, isError) {
+  const el = $('loginStatusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg' + (isError ? ' error' : '');
+}
+
 // ---------- СОБЫТИЯ ----------
 
 $('officeSelect').addEventListener('change', onOfficeChanged);
@@ -409,5 +440,24 @@ $('refreshBtn').addEventListener('click', () => {
   loadBootstrap(state.parity);
 });
 
+$('daySectionHeader').addEventListener('click', () => {
+  const el = $('weekSwitcher');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+});
+
+$('loginBtn').addEventListener('click', () => {
+  if (!state.employee) { setLoginStatus('Выберите офис, кабинет и сотрудника', true); return; }
+  localStorage.setItem('foodOrders.setupDone', 'true');
+  const email = $('loginEmail').value.trim();
+  if (email) { $('profileEmail').value = email; saveEmail(); }
+  showMainScreen();
+});
+
+$('switchUserBtn').addEventListener('click', () => {
+  localStorage.removeItem('foodOrders.setupDone');
+  showLoginScreen();
+});
+
 initOfficeSelect();
+if (isSetupDone()) showMainScreen(); else showLoginScreen();
 onOfficeChanged().catch(err => setStatus('Ошибка загрузки: ' + err.message, true));
