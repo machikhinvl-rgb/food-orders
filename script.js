@@ -434,29 +434,48 @@ function setLoginStatus(msg, isError) {
 
 // ---------- КАЛЕНДАРЬ СМЕН ----------
 
-let shiftsState = [false, false, false, false, false, false, false];
+const MONTH_NAMES = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+let shiftsDates = new Set(); // выбранные даты, строки "дд.мм.гггг"
+let shiftsViewMonth = new Date(); shiftsViewMonth.setDate(1);
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtDate(d) { return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); }
 
 async function loadShifts() {
   try {
     const data = await api('getShifts', { cabinet: state.cabinet, employee: state.employee });
     if (data.error) throw new Error(data.error);
-    shiftsState = data.days || [false, false, false, false, false, false, false];
-    renderShiftsToggle();
+    shiftsDates = new Set(data.dates || []);
+    shiftsViewMonth = new Date(); shiftsViewMonth.setDate(1);
+    renderShiftsCalendar();
   } catch (err) {
-    setShiftsStatus('Не удалось загрузить рабочие дни: ' + err.message, true);
+    setShiftsStatus('Не удалось загрузить смены: ' + err.message, true);
   }
 }
 
-function renderShiftsToggle() {
-  const wrap = $('shiftsToggle');
-  wrap.innerHTML = DOW_SHORT.map((label, i) =>
-    `<button type="button" data-day="${i}" class="${shiftsState[i] ? 'active' : ''}">${label}</button>`
-  ).join('');
-  wrap.querySelectorAll('button').forEach(btn => {
+function renderShiftsCalendar() {
+  $('shiftsMonthLabel').textContent = MONTH_NAMES[shiftsViewMonth.getMonth()] + ' ' + shiftsViewMonth.getFullYear();
+
+  const year = shiftsViewMonth.getFullYear(), month = shiftsViewMonth.getMonth();
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // Пн = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let html = DOW_SHORT.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for (let i = 0; i < startOffset; i++) html += '<div class="cal-cell empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = fmtDate(new Date(year, month, day));
+    const active = shiftsDates.has(dateStr) ? ' active' : '';
+    html += `<button type="button" class="cal-cell${active}" data-date="${dateStr}">${day}</button>`;
+  }
+
+  const wrap = $('shiftsCalendar');
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('button.cal-cell').forEach(btn => {
     btn.addEventListener('click', () => {
-      const i = Number(btn.dataset.day);
-      shiftsState[i] = !shiftsState[i];
-      btn.classList.toggle('active', shiftsState[i]);
+      const ds = btn.dataset.date;
+      if (shiftsDates.has(ds)) { shiftsDates.delete(ds); btn.classList.remove('active'); }
+      else { shiftsDates.add(ds); btn.classList.add('active'); }
     });
   });
 }
@@ -470,9 +489,9 @@ function setShiftsStatus(msg, isError) {
 async function saveShifts() {
   setShiftsStatus('Сохраняю…');
   try {
-    const res = await api('saveShifts', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, days: shiftsState }) });
+    const res = await api('saveShifts', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, dates: Array.from(shiftsDates) }) });
     if (res.error) throw new Error(res.error);
-    setShiftsStatus('✅ Рабочие дни сохранены');
+    setShiftsStatus('✅ Сохранено');
   } catch (err) {
     setShiftsStatus('Ошибка: ' + err.message, true);
   }
@@ -486,6 +505,14 @@ $('employeeSelect').addEventListener('change', loadEmployeeOrders);
 $('saveWeekBtn').addEventListener('click', saveWeek);
 $('saveEmailBtn').addEventListener('click', saveEmail);
 $('saveShiftsBtn').addEventListener('click', saveShifts);
+$('shiftsPrevMonth').addEventListener('click', () => {
+  shiftsViewMonth.setMonth(shiftsViewMonth.getMonth() - 1);
+  renderShiftsCalendar();
+});
+$('shiftsNextMonth').addEventListener('click', () => {
+  shiftsViewMonth.setMonth(shiftsViewMonth.getMonth() + 1);
+  renderShiftsCalendar();
+});
 $('refreshBtn').addEventListener('click', () => {
   if (state.parity) delete state.bootstrapCache[state.parity];
   loadBootstrap(state.parity);

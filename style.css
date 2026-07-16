@@ -187,27 +187,47 @@ select, .btn {
   margin-bottom: 10px;
 }
 
-.shifts-toggle {
+.shifts-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.shifts-month-nav .btn { width: auto; padding: 6px 14px; margin-top: 0; }
+.shifts-month-nav span { font-weight: 700; }
+
+.shifts-calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 4px;
 }
 
-.shifts-toggle button {
-  padding: 10px 2px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
+.cal-dow {
+  text-align: center;
+  font-size: 11px;
   color: var(--text-muted);
-  font-size: 12px;
   font-weight: 700;
-  cursor: pointer;
+  padding-bottom: 4px;
 }
 
-.shifts-toggle button.active {
+.cal-cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.cal-cell.empty { border: none; background: none; cursor: default; }
+
+.cal-cell.active {
   border-color: var(--green);
   background: #e8faf5;
   color: var(--green-dark);
+  font-weight: 700;
 }
 
 .day-tabs {

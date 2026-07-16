@@ -91,9 +91,14 @@
     </section>
 
     <section class="card" id="shiftsCard">
-      <div class="field-label">📆 Мои рабочие дни</div>
-      <div class="hint-text">Отметьте дни, в которые обычно работаете — пригодится для будущих напоминаний о заказе</div>
-      <div id="shiftsToggle" class="shifts-toggle"></div>
+      <div class="field-label">📆 Мои рабочие смены</div>
+      <div class="hint-text">Отметьте рабочие дни на месяц вперёд — если в этот день не будет заказа, придёт напоминание (за сутки и в сам день)</div>
+      <div class="shifts-month-nav">
+        <button type="button" id="shiftsPrevMonth" class="btn btn-outline">◀</button>
+        <span id="shiftsMonthLabel"></span>
+        <button type="button" id="shiftsNextMonth" class="btn btn-outline">▶</button>
+      </div>
+      <div id="shiftsCalendar" class="shifts-calendar"></div>
       <button id="saveShiftsBtn" class="btn btn-outline" style="margin-top:12px;">Сохранить</button>
       <div id="shiftsStatusMsg" class="status-msg"></div>
     </section>
