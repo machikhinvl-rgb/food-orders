@@ -22,6 +22,11 @@
     </label>
 
     <label class="field">
+      <span class="field-label">📅 Неделя</span>
+      <div id="weekToggle" class="week-toggle"></div>
+    </label>
+
+    <label class="field">
       <span class="field-label">🗄️ Кабинет</span>
       <select id="cabinetSelect"><option value="">Загрузка…</option></select>
     </label>
@@ -36,6 +41,25 @@
     <div id="statusMsg" class="status-msg"></div>
     <!-- Кнопка "Вход через Google" убрана: выбор кабинет+ФИО достаточен как идентификация -->
 
+  </section>
+
+  <section class="card" id="profileCard" style="display:none;">
+    <div class="field-label">🔔 Уведомления</div>
+
+    <label class="field">
+      <span class="field-label">Email</span>
+      <div class="profile-row">
+        <input type="email" id="profileEmail" placeholder="you@example.com">
+        <button id="saveEmailBtn" class="btn btn-outline">Сохранить</button>
+      </div>
+    </label>
+
+    <div class="field">
+      <span class="field-label">Telegram</span>
+      <div id="telegramStatus"></div>
+    </div>
+
+    <div id="profileStatusMsg" class="status-msg"></div>
   </section>
 
   <section class="card">

@@ -27,11 +27,13 @@ const MAX_QTY = 3;
 let state = {
   cabinet: null,
   employee: null,
+  parity: null,           // 'even' | 'odd' — выбранная неделя
   employeesByCabinet: {}, // кэш из bootstrap — переключение кабинета без обращения к серверу
   menu: null,             // кэш меню — не запрашивается заново при смене сотрудника
   orders: null,
   selectedDayIndex: 0,
-  cart: {}
+  cart: {},
+  bootstrapCache: {}      // { even: {...}, odd: {...} } — чтобы не грузить неделю дважды
 };
 
 const $ = (id) => document.getElementById(id);
@@ -74,26 +76,66 @@ function initOfficeSelect() {
 
 async function onOfficeChanged() {
   localStorage.setItem('foodOrders.office', $('officeSelect').value);
+  state.bootstrapCache = {};
+  state.parity = null;
+  $('profileCard').style.display = 'none';
   if (!currentGasUrl()) {
     setStatus('Для этого офиса приложение ещё не подключено — выберите другой офис', true);
     $('cabinetSelect').innerHTML = '<option value="">—</option>';
     $('employeeSelect').innerHTML = '<option value="">—</option>';
+    $('weekToggle').innerHTML = '';
     return;
   }
-  await loadBootstrap();
+  await loadBootstrap(null); // null = сервер сам определит текущую неделю по дате
+}
+
+// ---------- НЕДЕЛЯ (чётная/нечётная) ----------
+
+function weekRangeLabel(data) {
+  if (!data || !data.menu || !data.menu.days || !data.menu.days.length) return '';
+  const first = data.menu.days[0].date;
+  const last = data.menu.days[6].date;
+  return (first || '') + ' – ' + (last || '');
+}
+
+function renderWeekToggle() {
+  const wrap = $('weekToggle');
+  const order = ['odd', 'even'];
+  wrap.innerHTML = order.map(p => {
+    const cached = state.bootstrapCache[p];
+    const label = p === 'odd' ? 'Нечётная' : 'Чётная';
+    const range = cached ? weekRangeLabel(cached) : 'нажмите, чтобы загрузить';
+    const active = state.parity === p ? ' active' : '';
+    return `<button type="button" data-parity="${p}" class="${active.trim()}">${label} неделя<span class="range">${range}</span></button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => switchWeek(btn.dataset.parity));
+  });
+}
+
+async function switchWeek(parity) {
+  if (parity === state.parity) return;
+  await loadBootstrap(parity);
 }
 
 // ---------- ЗАГРУЗКА (1 запрос вместо трёх) ----------
 
-async function loadBootstrap() {
+async function loadBootstrap(parity) {
   setLoading(true);
   setStatus('Загрузка…');
   try {
-    const data = await api('bootstrap');
-    if (data.error) throw new Error(data.error);
+    let data = parity && state.bootstrapCache[parity] ? state.bootstrapCache[parity] : null;
+    if (!data) {
+      data = await api('bootstrap', parity ? { parity } : {});
+      if (data.error) throw new Error(data.error);
+      state.bootstrapCache[data.parity] = data;
+    }
 
+    state.parity = data.parity;
     state.employeesByCabinet = data.employeesByCabinet || {};
     state.menu = data.menu;
+
+    renderWeekToggle();
 
     const cabSel = $('cabinetSelect');
     cabSel.innerHTML = (data.cabinets || []).map(c => `<option value="${c}">${c}</option>`).join('');
@@ -102,6 +144,15 @@ async function loadBootstrap() {
 
     renderEmployeesForCabinet(cabSel.value);
     setStatus('');
+
+    // Незаметно подгружаем вторую неделю в фоне — чтобы на переключателе
+    // сразу были видны обе даты, а не только после клика.
+    const otherParity = data.parity === 'even' ? 'odd' : 'even';
+    if (!state.bootstrapCache[otherParity]) {
+      api('bootstrap', { parity: otherParity }).then(other => {
+        if (!other.error) { state.bootstrapCache[otherParity] = other; renderWeekToggle(); }
+      }).catch(() => {});
+    }
   } catch (err) {
     setStatus('Ошибка загрузки: ' + err.message, true);
   } finally {
@@ -131,7 +182,7 @@ async function loadEmployeeOrders() {
   setLoading(true);
   setStatus('Загрузка заказов…');
   try {
-    const orders = await api('employeeOrders', { cabinet: state.cabinet, employee: state.employee });
+    const orders = await api('employeeOrders', { cabinet: state.cabinet, employee: state.employee, parity: state.parity });
     if (orders.error) throw new Error(orders.error);
     state.orders = orders;
     state.cart = {};
@@ -145,6 +196,8 @@ async function loadEmployeeOrders() {
     setStatus('');
     renderDayTabs();
     selectDay(0);
+    $('profileCard').style.display = '';
+    loadProfile(); // не блокируем основной интерфейс ожиданием профиля
   } catch (err) {
     setStatus('Ошибка: ' + err.message, true);
   } finally {
@@ -276,7 +329,7 @@ async function saveWeek() {
         }))
       });
     }
-    const res = await api('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, days }) });
+    const res = await api('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, parity: state.parity, days }) });
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
@@ -286,13 +339,75 @@ async function saveWeek() {
   }
 }
 
+// ---------- ПРОФИЛЬ (Email + Telegram) ----------
+
+async function loadProfile() {
+  try {
+    const data = await api('getProfile', { cabinet: state.cabinet, employee: state.employee });
+    if (data.error) throw new Error(data.error);
+    $('profileEmail').value = data.email || '';
+    renderTelegramStatus(data);
+  } catch (err) {
+    setProfileStatus('Не удалось загрузить профиль: ' + err.message, true);
+  }
+}
+
+function renderTelegramStatus(data) {
+  const el = $('telegramStatus');
+  if (data.telegramConnected) {
+    el.className = 'telegram-status connected';
+    el.innerHTML = '✅ Подключён' + (data.telegramUsername ? ' (@' + escapeHtml(data.telegramUsername) + ')' : '');
+  } else if (data.telegramAvailable) {
+    el.className = 'telegram-status';
+    el.innerHTML = '<button id="connectTelegramBtn" class="btn btn-outline">Подключить Telegram</button><span class="muted">откроется чат с ботом</span>';
+    $('connectTelegramBtn').addEventListener('click', connectTelegram);
+  } else {
+    el.className = 'telegram-status';
+    el.innerHTML = '<span class="muted">Скоро будет доступно</span>';
+  }
+}
+
+function setProfileStatus(msg, isError) {
+  const el = $('profileStatusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg' + (isError ? ' error' : '');
+}
+
+async function saveEmail() {
+  setProfileStatus('Сохраняю…');
+  try {
+    const email = $('profileEmail').value.trim();
+    const res = await api('saveProfile', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, email }) });
+    if (res.error) throw new Error(res.error);
+    setProfileStatus('✅ Email сохранён');
+  } catch (err) {
+    setProfileStatus('Ошибка: ' + err.message, true);
+  }
+}
+
+async function connectTelegram() {
+  setProfileStatus('Готовлю ссылку…');
+  try {
+    const data = await api('telegramLink', { cabinet: state.cabinet, employee: state.employee });
+    if (!data.available) { setProfileStatus('Telegram-уведомления пока не подключены', true); return; }
+    window.open(data.url, '_blank');
+    setProfileStatus('Откройте Telegram и нажмите «Старт» в чате с ботом — после этого вернитесь и обновите страницу');
+  } catch (err) {
+    setProfileStatus('Ошибка: ' + err.message, true);
+  }
+}
+
 // ---------- СОБЫТИЯ ----------
 
 $('officeSelect').addEventListener('change', onOfficeChanged);
 $('cabinetSelect').addEventListener('change', (e) => renderEmployeesForCabinet(e.target.value));
 $('employeeSelect').addEventListener('change', loadEmployeeOrders);
 $('saveWeekBtn').addEventListener('click', saveWeek);
-$('refreshBtn').addEventListener('click', () => loadBootstrap());
+$('saveEmailBtn').addEventListener('click', saveEmail);
+$('refreshBtn').addEventListener('click', () => {
+  if (state.parity) delete state.bootstrapCache[state.parity];
+  loadBootstrap(state.parity);
+});
 
 initOfficeSelect();
 onOfficeChanged().catch(err => setStatus('Ошибка загрузки: ' + err.message, true));

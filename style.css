@@ -81,6 +81,69 @@ select, .btn {
 .status-msg { font-size: 13px; margin-top: 8px; min-height: 16px; color: var(--green-dark); }
 .status-msg.error { color: #d64545; }
 
+.week-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.week-toggle button {
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.week-toggle button.active {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+}
+
+.week-toggle button .range {
+  display: block;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.week-toggle button.active .range { color: var(--blue); }
+
+.profile-row {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-row input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.profile-row .btn {
+  width: auto;
+  white-space: nowrap;
+}
+
+.telegram-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.telegram-status.connected { color: var(--green-dark); font-weight: 600; }
+.telegram-status .btn { width: auto; margin-top: 0; }
+.telegram-status .muted { color: var(--text-muted); font-size: 13px; }
+
 .day-tabs {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
