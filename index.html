@@ -54,6 +54,13 @@
     </section>
 
     <section class="card">
+      <button type="button" id="openShiftsBtn" class="day-section-header">
+        <span>📆 Мои рабочие смены</span>
+        <span class="week-range-label">открыть</span>
+      </button>
+    </section>
+
+    <section class="card">
       <button type="button" id="daySectionHeader" class="day-section-header">
         <span>📅 Выберите день/неделю для заказа</span>
         <span id="weekRangeLabel" class="week-range-label"></span>
@@ -90,8 +97,15 @@
       <div id="profileStatusMsg" class="status-msg"></div>
     </section>
 
-    <section class="card" id="shiftsCard">
-      <div class="field-label">📆 Мои рабочие смены</div>
+  </div>
+
+  <!-- ВСПЛЫВАЮЩЕЕ ОКНО: календарь рабочих смен -->
+  <div id="shiftsModalOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="field-label">📆 Мои рабочие смены</span>
+        <button type="button" id="closeShiftsModal" class="modal-close">✕</button>
+      </div>
       <div class="hint-text">Отметьте рабочие дни на месяц вперёд — если в этот день не будет заказа, придёт напоминание (за сутки и в сам день)</div>
       <div class="shifts-month-nav">
         <button type="button" id="shiftsPrevMonth" class="btn btn-outline">◀</button>
@@ -99,10 +113,9 @@
         <button type="button" id="shiftsNextMonth" class="btn btn-outline">▶</button>
       </div>
       <div id="shiftsCalendar" class="shifts-calendar"></div>
-      <button id="saveShiftsBtn" class="btn btn-outline" style="margin-top:12px;">Сохранить</button>
+      <button id="saveShiftsBtn" class="btn btn-primary" style="margin-top:12px;">Сохранить</button>
       <div id="shiftsStatusMsg" class="status-msg"></div>
-    </section>
-
+    </div>
   </div>
 
 </div>

@@ -518,6 +518,16 @@ $('refreshBtn').addEventListener('click', () => {
   loadBootstrap(state.parity);
 });
 
+$('openShiftsBtn').addEventListener('click', () => {
+  $('shiftsModalOverlay').style.display = 'flex';
+});
+$('closeShiftsModal').addEventListener('click', () => {
+  $('shiftsModalOverlay').style.display = 'none';
+});
+$('shiftsModalOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'shiftsModalOverlay') $('shiftsModalOverlay').style.display = 'none';
+});
+
 $('daySectionHeader').addEventListener('click', () => {
   const el = $('weekSwitcher');
   el.style.display = el.style.display === 'none' ? '' : 'none';
