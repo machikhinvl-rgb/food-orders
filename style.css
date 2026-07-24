@@ -43,14 +43,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 14px 18px;
   background: var(--card-bg);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
-.topbar-title { font-size: 18px; font-weight: 700; }
+.topbar-title { font-size: 18px; font-weight: 700; white-space: nowrap; }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 
 .card {
   background: var(--card-bg);
@@ -372,6 +382,16 @@ select, .btn {
   text-align: right;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .topbar-title { font-size: 15px; }
+  .topbar-actions .btn-label { display: none; }
+  .topbar-actions .btn { padding: 8px 10px; }
+}
+
+@media (max-width: 380px) {
+  .topbar-title { font-size: 13px; }
 }
 
 @media (max-width: 520px) {
