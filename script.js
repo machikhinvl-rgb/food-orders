@@ -45,6 +45,31 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ---------- УСТАНОВКА ПРИЛОЖЕНИЯ (Android/Chrome и похожие) ----------
+// iPhone/Safari такое не поддерживает — там установка только вручную,
+// через "Поделиться" → "На экран «Домой»" (кнопку показать не получится).
+
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  $('installAppBtn').style.display = '';
+});
+
+window.addEventListener('appinstalled', () => {
+  $('installAppBtn').style.display = 'none';
+  deferredInstallPrompt = null;
+});
+
+$('installAppBtn').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  $('installAppBtn').style.display = 'none';
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+});
+
 // ---------- ТЁМНАЯ ТЕМА ----------
 
 function initTheme() {
