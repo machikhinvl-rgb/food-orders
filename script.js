@@ -39,6 +39,12 @@ let state = {
 
 const $ = (id) => document.getElementById(id);
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
 // ---------- ТЁМНАЯ ТЕМА ----------
 
 function initTheme() {
