@@ -11,6 +11,18 @@
   --radius: 10px;
 }
 
+[data-theme="dark"] {
+  --bg: #14171c;
+  --card-bg: #1e2229;
+  --border: #2c313a;
+  --text: #e9edf2;
+  --text-muted: #8b93a1;
+  --blue: #5b8dff;
+  --blue-light: #202a42;
+  --green: #1fd7a8;
+  --green-dark: #17b891;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -18,6 +30,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  transition: background 0.2s, color 0.2s;
 }
 
 .app {
@@ -45,6 +58,7 @@ body {
   border-radius: var(--radius);
   padding: 16px 18px;
   margin-bottom: 14px;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .field { display: block; margin-bottom: 12px; }
@@ -56,7 +70,7 @@ select, .btn {
   border-radius: 8px;
   border: 1px solid var(--border);
   font-size: 15px;
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text);
 }
 
@@ -78,6 +92,17 @@ select, .btn {
   font-size: 14px;
 }
 
+.theme-toggle {
+  width: auto;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
 .status-msg { font-size: 13px; margin-top: 8px; min-height: 16px; color: var(--green-dark); }
 .status-msg.error { color: #d64545; }
 
@@ -92,7 +117,7 @@ select, .btn {
   padding: 10px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
@@ -144,6 +169,32 @@ select, .btn {
 .telegram-status.connected { color: var(--green-dark); font-weight: 600; }
 .telegram-status .btn { width: auto; margin-top: 0; }
 .telegram-status .muted { color: var(--text-muted); font-size: 13px; }
+
+.email-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.email-status.connected { color: var(--green-dark); font-weight: 600; }
+.email-status .btn { width: auto; margin-top: 0; padding: 6px 12px; font-size: 13px; }
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.notif-header .btn { width: auto; margin-top: 0; padding: 6px 12px; font-size: 13px; }
+
+.notif-summary {
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.notif-summary .missing { color: var(--text-muted); }
 
 .top-status { padding: 0 4px; }
 
@@ -215,7 +266,7 @@ select, .btn {
   aspect-ratio: 1;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--card-bg);
   font-size: 13px;
   cursor: pointer;
   color: var(--text);
@@ -280,7 +331,7 @@ select, .btn {
   padding: 10px 4px;
   text-align: center;
   cursor: pointer;
-  background: #fff;
+  background: var(--card-bg);
 }
 
 .day-tab.active { border-color: var(--blue); background: var(--blue-light); }

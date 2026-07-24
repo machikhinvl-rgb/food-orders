@@ -31,12 +31,35 @@ let state = {
   employeesByCabinet: {}, // кэш из bootstrap — переключение кабинета без обращения к серверу
   menu: null,             // кэш меню — не запрашивается заново при смене сотрудника
   orders: null,
+  profile: null,           // { email, telegramConnected, telegramUsername, telegramAvailable }
   selectedDayIndex: 0,
   cart: {},
   bootstrapCache: {}      // { even: {...}, odd: {...} } — чтобы не грузить неделю дважды
 };
 
 const $ = (id) => document.getElementById(id);
+
+// ---------- ТЁМНАЯ ТЕМА ----------
+
+function initTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  $('themeToggleBtn').textContent = current === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('foodOrders.theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('foodOrders.theme', 'dark');
+  }
+  $('themeToggleBtn').textContent = isDark ? '🌙' : '☀️';
+}
+
+$('themeToggleBtn').addEventListener('click', toggleTheme);
+initTheme();
 
 async function api(action, params) {
   const gasUrl = currentGasUrl();
@@ -352,18 +375,47 @@ async function loadProfile() {
   try {
     const data = await api('getProfile', { cabinet: state.cabinet, employee: state.employee });
     if (data.error) throw new Error(data.error);
-    $('profileEmail').value = data.email || '';
-    renderTelegramStatus(data);
+    state.profile = data;
+    renderNotifSummary(data);
+    $('notifEditForm').style.display = 'none';
+    $('editNotifBtn').textContent = '✏️ Изменить';
   } catch (err) {
     setProfileStatus('Не удалось загрузить профиль: ' + err.message, true);
   }
+}
+
+function renderNotifSummary(data) {
+  const emailLine = data.email
+    ? `✅ Email: ${escapeHtml(data.email)}`
+    : `<span class="missing">— Email не указан</span>`;
+  const tgLine = data.telegramConnected
+    ? `✅ Telegram: @${escapeHtml(data.telegramUsername || '—')}`
+    : `<span class="missing">— Telegram не подключён</span>`;
+  $('notifSummary').innerHTML = `<div>${emailLine}</div><div>${tgLine}</div>`;
+}
+
+function openNotifEditForm() {
+  const data = state.profile || {};
+  $('profileEmail').value = data.email || '';
+  renderTelegramStatus(data);
+  $('notifSummary').style.display = 'none';
+  $('notifEditForm').style.display = '';
+  $('editNotifBtn').textContent = '✖️ Отмена';
+}
+
+function closeNotifEditForm() {
+  $('notifSummary').style.display = '';
+  $('notifEditForm').style.display = 'none';
+  $('editNotifBtn').textContent = '✏️ Изменить';
 }
 
 function renderTelegramStatus(data) {
   const el = $('telegramStatus');
   if (data.telegramConnected) {
     el.className = 'telegram-status connected';
-    el.innerHTML = '✅ Подключён' + (data.telegramUsername ? ' (@' + escapeHtml(data.telegramUsername) + ')' : '');
+    el.innerHTML = '✅ Подключён' + (data.telegramUsername ? ' (@' + escapeHtml(data.telegramUsername) + ')' : '') +
+      ' <button type="button" id="disconnectTelegramBtn" class="btn btn-outline">Отключить</button>';
+    $('disconnectTelegramBtn').addEventListener('click', disconnectTelegram);
   } else if (data.telegramAvailable) {
     el.className = 'telegram-status';
     el.innerHTML = '<button id="connectTelegramBtn" class="btn btn-outline">Подключить Telegram</button><span class="muted">откроется чат с ботом</span>';
@@ -380,20 +432,26 @@ function setProfileStatus(msg, isError) {
   el.className = 'status-msg' + (isError ? ' error' : '');
 }
 
-async function saveEmail() {
+async function saveEmailValue(email) {
   setProfileStatus('Сохраняю…');
   try {
-    const email = $('profileEmail').value.trim();
     const res = await api('saveProfile', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, email }) });
     if (res.error) throw new Error(res.error);
-    setProfileStatus('✅ Email сохранён');
-
-    const btn = $('saveEmailBtn');
-    const original = btn.textContent;
-    btn.textContent = '✅ Сохранено';
-    setTimeout(() => { btn.textContent = original; }, 2000);
+    state.profile = Object.assign({}, state.profile, { email });
+    setProfileStatus('✅ Сохранено');
   } catch (err) {
     setProfileStatus('Ошибка: ' + err.message, true);
+    throw err;
+  }
+}
+
+async function saveNotifForm() {
+  try {
+    await saveEmailValue($('profileEmail').value.trim());
+    renderNotifSummary(state.profile);
+    closeNotifEditForm();
+  } catch (err) {
+    // сообщение об ошибке уже показано в saveEmailValue, форму не закрываем
   }
 }
 
@@ -404,6 +462,19 @@ async function connectTelegram() {
     if (!data.available) { setProfileStatus('Telegram-уведомления пока не подключены', true); return; }
     window.open(data.url, '_blank');
     setProfileStatus('Откройте Telegram и нажмите «Старт» в чате с ботом — после этого вернитесь и обновите страницу');
+  } catch (err) {
+    setProfileStatus('Ошибка: ' + err.message, true);
+  }
+}
+
+async function disconnectTelegram() {
+  setProfileStatus('Отключаю…');
+  try {
+    const res = await api('disconnectTelegram', { cabinet: state.cabinet, employee: state.employee });
+    if (res.error) throw new Error(res.error);
+    state.profile = Object.assign({}, state.profile, { telegramConnected: false, telegramUsername: '' });
+    renderTelegramStatus(state.profile);
+    setProfileStatus('Telegram отключён');
   } catch (err) {
     setProfileStatus('Ошибка: ' + err.message, true);
   }
@@ -508,8 +579,13 @@ $('officeSelect').addEventListener('change', onOfficeChanged);
 $('cabinetSelect').addEventListener('change', (e) => renderEmployeesForCabinet(e.target.value));
 $('employeeSelect').addEventListener('change', loadEmployeeOrders);
 $('saveWeekBtn').addEventListener('click', saveWeek);
-$('saveEmailBtn').addEventListener('click', saveEmail);
 $('saveShiftsBtn').addEventListener('click', saveShifts);
+
+$('editNotifBtn').addEventListener('click', () => {
+  if ($('notifEditForm').style.display === 'none') openNotifEditForm();
+  else closeNotifEditForm();
+});
+$('saveNotifBtn').addEventListener('click', saveNotifForm);
 $('shiftsPrevMonth').addEventListener('click', () => {
   shiftsViewMonth.setMonth(shiftsViewMonth.getMonth() - 1);
   renderShiftsCalendar();
@@ -542,7 +618,7 @@ $('loginBtn').addEventListener('click', () => {
   if (!state.employee) { setLoginStatus('Выберите офис, кабинет и сотрудника', true); return; }
   localStorage.setItem('foodOrders.setupDone', 'true');
   const email = $('loginEmail').value.trim();
-  if (email) { $('profileEmail').value = email; saveEmail(); }
+  if (email) saveEmailValue(email);
   showMainScreen();
 });
 

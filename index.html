@@ -7,12 +7,24 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<script>
+  // Применяем тему сразу, до отрисовки — чтобы не было мигания светлой темой
+  (function () {
+    var saved = localStorage.getItem('foodOrders.theme');
+    var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  })();
+</script>
+
 
 <div class="app">
 
   <header class="topbar">
     <div class="topbar-title">🍽️ Заказ еды</div>
-    <button id="refreshBtn" class="btn btn-outline">🔄 Обновить</button>
+    <div>
+      <button id="refreshBtn" class="btn btn-outline">🔄 Обновить</button>
+      <button id="themeToggleBtn" class="theme-toggle" title="Переключить тему">🌙</button>
+    </div>
   </header>
 
   <div id="statusMsg" class="status-msg top-status"></div>
@@ -79,19 +91,25 @@
     </section>
 
     <section class="card" id="profileCard">
-      <div class="field-label">🔔 Уведомления</div>
+      <div class="notif-header">
+        <div class="field-label">🔔 Уведомления</div>
+        <button type="button" id="editNotifBtn" class="btn btn-outline">✏️ Изменить</button>
+      </div>
 
-      <label class="field">
-        <span class="field-label">Email</span>
-        <div class="profile-row">
+      <div id="notifSummary" class="notif-summary"></div>
+
+      <div id="notifEditForm" style="display:none;">
+        <label class="field">
+          <span class="field-label">Email</span>
           <input type="email" id="profileEmail" placeholder="you@example.com">
-          <button id="saveEmailBtn" class="btn btn-outline">Сохранить</button>
-        </div>
-      </label>
+        </label>
 
-      <div class="field">
-        <span class="field-label">Telegram</span>
-        <div id="telegramStatus"></div>
+        <div class="field">
+          <span class="field-label">Telegram</span>
+          <div id="telegramStatus"></div>
+        </div>
+
+        <button type="button" id="saveNotifBtn" class="btn btn-primary">Сохранить</button>
       </div>
 
       <div id="profileStatusMsg" class="status-msg"></div>
