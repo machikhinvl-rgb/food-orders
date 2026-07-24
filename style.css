@@ -327,4 +327,7 @@ select, .btn {
   .day-tabs { grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
   .day-tab { padding: 6px 2px; }
   .day-tab .num { font-size: 14px; }
+
+  .profile-row { flex-direction: column; }
+  .profile-row .btn { width: 100%; }
 }

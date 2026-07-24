@@ -387,6 +387,11 @@ async function saveEmail() {
     const res = await api('saveProfile', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, email }) });
     if (res.error) throw new Error(res.error);
     setProfileStatus('✅ Email сохранён');
+
+    const btn = $('saveEmailBtn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Сохранено';
+    setTimeout(() => { btn.textContent = original; }, 2000);
   } catch (err) {
     setProfileStatus('Ошибка: ' + err.message, true);
   }
