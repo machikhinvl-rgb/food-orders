@@ -23,6 +23,7 @@ const SLOT_KEYS = ['SALAD', 'SOUP', 'HOT', 'SIDE', 'PASTRY', 'FREE1', 'FREE2'];
 const DOW_SHORT = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 const DOW_FULL = ['понедельник','вторник','среда','четверг','пятница','суббота','воскресенье'];
 const MAX_QTY = 3;
+const DAY_LIMIT = 520; // максимальная сумма заказа в день — превышение подсвечивается
 
 let state = {
   cabinet: null,
@@ -270,10 +271,11 @@ function renderDayTabs() {
     const [dd] = (d.date || '').split('.');
     const tab = document.createElement('div');
     tab.className = 'day-tab' + (i === state.selectedDayIndex ? ' active' : '');
+    const total = dayTotal(i);
     tab.innerHTML = `
       <div class="num">${dd || '?'}</div>
       <div class="dow">${DOW_SHORT[i]}</div>
-      <div class="sum">${dayTotal(i)} ₽</div>
+      <div class="sum${total > DAY_LIMIT ? ' over-limit' : ''}">${total} ₽</div>
     `;
     tab.addEventListener('click', () => selectDay(i));
     wrap.appendChild(tab);
@@ -296,6 +298,21 @@ function dayTotal(dayIndex) {
   }, 0);
 }
 
+function updateDayTotalDisplay(idx) {
+  const total = dayTotal(idx);
+  const el = $('dayTotal');
+  el.textContent = `Итого: ${total} ₽`;
+  el.classList.toggle('over-limit', total > DAY_LIMIT);
+
+  const warn = $('limitWarning');
+  if (total > DAY_LIMIT) {
+    warn.textContent = `⚠️ Превышен дневной лимит (${DAY_LIMIT} ₽) на ${total - DAY_LIMIT} ₽`;
+    warn.style.display = '';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
 function selectDay(index) {
   state.selectedDayIndex = index;
   renderDayTabs();
@@ -310,7 +327,7 @@ function renderDayDetail() {
   const menuDay = state.menu.days[idx];
 
   $('dayTitle').textContent = `${DOW_FULL[idx]}, ${orderDay.date}`;
-  $('dayTotal').textContent = `Итого: ${dayTotal(idx)} ₽`;
+  updateDayTotalDisplay(idx);
 
   const list = $('slotsList');
   list.innerHTML = '';
@@ -327,11 +344,11 @@ function renderDayDetail() {
       `<option value="${escapeHtml(o.name)}" data-price="${o.price}" ${o.name === current.dish ? 'selected' : ''}>${escapeHtml(o.name)} (${o.price}₽)</option>`
     ).join('');
 
-    const qty = document.createElement('input');
-    qty.type = 'number';
+    const qty = document.createElement('select');
     qty.className = 'slot-qty';
-    qty.min = 0; qty.max = MAX_QTY;
-    qty.value = current.dish ? (current.qty || 1) : 0;
+    qty.innerHTML = Array.from({ length: MAX_QTY }, (_, i) => i + 1).map(n => `<option value="${n}">${n}</option>`).join('');
+    qty.value = current.dish ? (current.qty || 1) : 1;
+    qty.disabled = !current.dish;
 
     const price = document.createElement('div');
     price.className = 'slot-price';
@@ -341,20 +358,19 @@ function renderDayDetail() {
       const opt = select.selectedOptions[0];
       const dish = select.value;
       const p = dish ? Number(opt.dataset.price) : 0;
-      qty.value = dish ? Math.max(1, Number(qty.value) || 1) : 0;
-      state.cart[idx][key] = { dish, qty: Number(qty.value), price: p };
+      qty.disabled = !dish;
+      if (dish && (!qty.value || Number(qty.value) < 1)) qty.value = '1';
+      state.cart[idx][key] = { dish, qty: dish ? Number(qty.value) : 0, price: p };
       price.textContent = p + ' ₽';
       renderDayTabs();
-      $('dayTotal').textContent = `Итого: ${dayTotal(idx)} ₽`;
+      updateDayTotalDisplay(idx);
     });
 
     qty.addEventListener('change', () => {
-      let v = Math.max(0, Math.min(MAX_QTY, Number(qty.value) || 0));
-      qty.value = v;
+      const v = Number(qty.value);
       state.cart[idx][key].qty = v;
-      if (v === 0) { state.cart[idx][key].dish = ''; select.value = ''; state.cart[idx][key].price = 0; price.textContent = '0 ₽'; }
       renderDayTabs();
-      $('dayTotal').textContent = `Итого: ${dayTotal(idx)} ₽`;
+      updateDayTotalDisplay(idx);
     });
 
     row.appendChild(select);
