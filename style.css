@@ -394,16 +394,16 @@ select, .btn {
 .slot-row select { flex: 1; }
 
 .slot-row .slot-qty {
-  width: 34px;
+  width: 44px;
   flex: none;
   text-align: center;
   text-align-last: center;
-  padding: 4px 0;
-  border-radius: 6px;
+  padding: 12px 4px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .slot-qty:disabled { opacity: 0.5; }
