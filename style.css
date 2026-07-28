@@ -344,7 +344,18 @@ select, .btn {
   background: var(--card-bg);
 }
 
-.day-tab.active { border-color: var(--blue); background: var(--blue-light); }
+.day-tab.day-ok {
+  border-color: var(--green);
+  background: rgba(22, 199, 154, 0.10);
+}
+
+.day-tab.day-over {
+  border-color: #d64545;
+  background: rgba(214, 69, 69, 0.10);
+}
+
+.day-tab.active { box-shadow: inset 0 0 0 2px var(--blue); }
+
 .day-tab .num { font-size: 18px; font-weight: 700; }
 .day-tab .dow { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 .day-tab .sum { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
@@ -383,16 +394,16 @@ select, .btn {
 .slot-row select { flex: 1; }
 
 .slot-qty {
-  width: 60px;
+  width: 44px;
   flex: none;
   text-align: center;
   text-align-last: center;
-  padding: 8px 4px;
+  padding: 6px 2px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .slot-qty:disabled { opacity: 0.5; }

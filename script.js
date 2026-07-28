@@ -270,8 +270,9 @@ function renderDayTabs() {
   days.forEach((d, i) => {
     const [dd] = (d.date || '').split('.');
     const tab = document.createElement('div');
-    tab.className = 'day-tab' + (i === state.selectedDayIndex ? ' active' : '');
     const total = dayTotal(i);
+    const statusClass = total > DAY_LIMIT ? ' day-over' : (total > 0 ? ' day-ok' : '');
+    tab.className = 'day-tab' + (i === state.selectedDayIndex ? ' active' : '') + statusClass;
     tab.innerHTML = `
       <div class="num">${dd || '?'}</div>
       <div class="dow">${DOW_SHORT[i]}</div>
