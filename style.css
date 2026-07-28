@@ -386,7 +386,7 @@ select, .btn {
 
 .slot-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   margin-bottom: 10px;
 }
@@ -409,7 +409,7 @@ select, .btn {
 .slot-qty:disabled { opacity: 0.5; }
 
 .slot-price {
-  width: 52px;
+  width: 40px;
   flex: none;
   text-align: right;
   font-weight: 600;
@@ -437,6 +437,6 @@ select, .btn {
   .slot-row { gap: 6px; margin-bottom: 8px; }
   .slot-row select { padding: 9px 8px; font-size: 13px; }
   .slot-row .slot-qty { width: 36px; padding: 9px 2px; font-size: 13px; border-radius: 6px; }
-  .slot-price { width: 44px; font-size: 13px; }
+  .slot-price { width: 34px; font-size: 13px; }
 }
 
