@@ -386,7 +386,7 @@ select, .btn {
 
 .slot-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   margin-bottom: 10px;
 }
@@ -409,7 +409,7 @@ select, .btn {
 .slot-qty:disabled { opacity: 0.5; }
 
 .slot-price {
-  width: 70px;
+  width: 52px;
   flex: none;
   text-align: right;
   font-weight: 600;
