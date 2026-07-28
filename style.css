@@ -393,7 +393,7 @@ select, .btn {
 
 .slot-row select { flex: 1; }
 
-.slot-qty {
+.slot-row .slot-qty {
   width: 34px;
   flex: none;
   text-align: center;
