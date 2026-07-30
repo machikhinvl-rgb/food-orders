@@ -272,7 +272,11 @@ function renderDayTabs() {
     const [dd] = (d.date || '').split('.');
     const tab = document.createElement('div');
     const total = dayTotal(i);
-    const statusClass = total > DAY_LIMIT ? ' day-over' : (total > 0 ? ' day-ok' : '');
+    const isShiftDay = shiftsDates.has(d.date);
+    let statusClass = '';
+    if (total > DAY_LIMIT) statusClass = ' day-over';
+    else if (total > 0) statusClass = ' day-ok';
+    else if (isShiftDay) statusClass = ' day-shift-noorder'; // рабочий день по смене, но заказа ещё нет
     tab.className = 'day-tab' + (i === state.selectedDayIndex ? ' active' : '') + statusClass;
     tab.innerHTML = `
       <div class="num">${dd || '?'}</div>
@@ -574,6 +578,7 @@ async function loadShifts() {
     shiftsDates = new Set(data.dates || []);
     shiftsViewMonth = new Date(); shiftsViewMonth.setDate(1);
     renderShiftsCalendar();
+    renderDayTabs(); // подсветка "смена без заказа" зависит от shiftsDates, которых не было при первом рендере
   } catch (err) {
     setShiftsStatus('Не удалось загрузить смены: ' + err.message, true);
   }
@@ -617,6 +622,7 @@ async function saveShifts() {
     const res = await api('saveShifts', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, dates: Array.from(shiftsDates) }) });
     if (res.error) throw new Error(res.error);
     setShiftsStatus('✅ Сохранено');
+    renderDayTabs();
   } catch (err) {
     setShiftsStatus('Ошибка: ' + err.message, true);
   }
