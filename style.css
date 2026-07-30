@@ -414,11 +414,12 @@ select, .btn {
 .slot-qty:disabled { opacity: 0.5; }
 
 .slot-price {
-  width: 40px;
+  width: 46px;
   flex: none;
   text-align: right;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 @media (max-width: 480px) {
@@ -442,6 +443,6 @@ select, .btn {
   .slot-row { gap: 6px; margin-bottom: 8px; }
   .slot-row select { padding: 9px 8px; font-size: 13px; }
   .slot-row .slot-qty { width: 36px; padding: 9px 2px; font-size: 13px; border-radius: 6px; }
-  .slot-price { width: 34px; font-size: 13px; }
+  .slot-price { width: 46px; font-size: 13px; white-space: nowrap; }
 }
 
