@@ -10,7 +10,8 @@ const OFFICE_URLS = {
   'Средний пр': 'https://script.google.com/macros/s/AKfycbwbhjN3voXok0dqnqmYJOxh0SkFQxnj8HqnNXMkMFCAO-nDa5ZLYPox-ADSgagCzas6/exec',
   'Фонтанка':   'https://script.google.com/macros/s/AKfycbxGh-ZJQ0Do5AW3bc3MTbTqCSJ1n8WvsjG_2hnMKO1QOaE5ZtDiPsN0ZGzxBShZsP0zVQ/exec',
   'Невский':    'https://script.google.com/macros/s/AKfycbxiZDoAUTqgw5WAZ010CWsU8ljcJvulhHPHQWOZe8-HddlE8wNuneZZWVa81r2Kq4Ug-g/exec',
-  'Тележная':   'https://script.google.com/macros/s/AKfycbyDWb8E-t99_J0MwGHk6uH6TIDyfFtraCSkiQ2P0vKegOzcgQp0QcAE9wE1R7BvzAmV/exec'
+  'Тележная':   'https://script.google.com/macros/s/AKfycbyDWb8E-t99_J0MwGHk6uH6TIDyfFtraCSkiQ2P0vKegOzcgQp0QcAE9wE1R7BvzAmV/exec',
+  'Пифагор (тест Печать/Счёт)': 'https://script.google.com/macros/s/AKfycbyGp7DSz_fF1ydFNvdWNsFfVSjdCBZUqSkiq4Kh5q6yd84U23uh0QfQqUEX-lXjCRYS/exec' // временно, для проверки связки Печать/Счёт
 };
 
 function currentGasUrl() {
