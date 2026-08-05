@@ -93,13 +93,24 @@ function toggleTheme() {
 $('themeToggleBtn').addEventListener('click', toggleTheme);
 initTheme();
 
-async function api(action, params) {
+// Собирает URL запроса вручную (без new URL()/URLSearchParams). У некоторых
+// версий Safari/iOS (особенно в режиме "На экран Домой") есть шероховатости
+// именно с этими объектными API — на длинных значениях (как payload с целым
+// заказом) может вылететь "TypeError: The string did not match the expected
+// pattern." Обычная строковая конкатенация с encodeURIComponent работает
+// одинаково везде, без сюрпризов.
+function buildApiUrl_(action, params) {
   const gasUrl = currentGasUrl();
   if (!gasUrl) throw new Error('Для этого офиса ещё не подключён Apps Script (нет URL)');
-  const url = new URL(gasUrl);
-  url.searchParams.set('action', action);
-  Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
+  const parts = ['action=' + encodeURIComponent(action)];
+  Object.entries(params || {}).forEach(([k, v]) => {
+    parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+  });
+  return gasUrl + (gasUrl.indexOf('?') === -1 ? '?' : '&') + parts.join('&');
+}
+
+async function api(action, params) {
+  const res = await fetch(buildApiUrl_(action, params));
   return res.json();
 }
 
@@ -119,14 +130,13 @@ async function apiPost(body) {
 // не трогаем, чтобы не менять то, что и так работает.
 function apiViaXHR(action, params) {
   return new Promise((resolve, reject) => {
-    const gasUrl = currentGasUrl();
-    if (!gasUrl) { reject(new Error('Для этого офиса ещё не подключён Apps Script (нет URL)')); return; }
-    const url = new URL(gasUrl);
-    url.searchParams.set('action', action);
-    Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+    let urlStr;
+    try {
+      urlStr = buildApiUrl_(action, params);
+    } catch (e) { reject(e); return; }
 
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', url.toString(), true);
+    xhr.open('GET', urlStr, true);
     xhr.onload = () => {
       try { resolve(JSON.parse(xhr.responseText)); }
       catch (e) { reject(new Error('Некорректный ответ сервера: ' + xhr.responseText)); }
