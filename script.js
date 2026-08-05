@@ -447,7 +447,13 @@ async function saveWeek() {
         }))
       });
     }
-    const res = await apiViaXHR('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, parity: state.parity, days }) });
+    // Отправляем через POST (тело запроса), а не через длинный GET-URL.
+    // Обнаружили: даже пустая неделя даёт URL ~4000+ символов, полная —
+    // 8000+. На мобильной сети (4G) операторские прокси часто обрывают
+    // такие длинные URL ещё до ответа сервера — отсюда "status=0" что у
+    // fetch, что у XHR, независимо от способа отправки. У тела POST-
+    // запроса такого практического лимита нет.
+    const res = await apiPost({ cabinet: state.cabinet, employee: state.employee, parity: state.parity, days });
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
