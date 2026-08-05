@@ -110,6 +110,32 @@ async function apiPost(body) {
   return res.json();
 }
 
+// Отправка через XMLHttpRequest вместо fetch — обходной путь для saveWeek().
+// На некоторых Android WebView (именно в установленном PWA, не в обычной
+// вкладке Chrome) fetch() иногда падает с "Failed to fetch" без реальной
+// сетевой причины — известный класс багов конкретно WebView-рендерера.
+// XMLHttpRequest — более старый API, как правило не подвержен этому же
+// классу ошибок. Используется ТОЛЬКО в saveWeek(), остальные запросы пока
+// не трогаем, чтобы не менять то, что и так работает.
+function apiViaXHR(action, params) {
+  return new Promise((resolve, reject) => {
+    const gasUrl = currentGasUrl();
+    if (!gasUrl) { reject(new Error('Для этого офиса ещё не подключён Apps Script (нет URL)')); return; }
+    const url = new URL(gasUrl);
+    url.searchParams.set('action', action);
+    Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url.toString(), true);
+    xhr.onload = () => {
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch (e) { reject(new Error('Некорректный ответ сервера: ' + xhr.responseText)); }
+    };
+    xhr.onerror = () => reject(new Error('Сетевая ошибка (XHR): status=' + xhr.status));
+    xhr.send();
+  });
+}
+
 function setStatus(msg, isError) {
   const el = $('statusMsg');
   el.textContent = msg;
@@ -411,7 +437,7 @@ async function saveWeek() {
         }))
       });
     }
-    const res = await api('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, parity: state.parity, days }) });
+    const res = await apiViaXHR('saveWeek', { payload: JSON.stringify({ cabinet: state.cabinet, employee: state.employee, parity: state.parity, days }) });
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
