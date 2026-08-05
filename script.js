@@ -208,9 +208,12 @@ async function loadBootstrap(parity) {
         if (!other.error) { state.bootstrapCache[otherParity] = other; renderWeekToggle(); }
       }).catch(() => {});
     }
-  } catch (err) {
-    setStatus('Ошибка загрузки: ' + err.message, true);
-  } finally {
+} catch (err) {
+  const online = navigator.onLine ? 'да' : 'НЕТ';
+  const details = 'Ошибка: ' + err.toString() + ' | Интернет доступен: ' + online + ' | URL: ' + (currentGasUrl() || 'нет');
+  setStatus(details, true);
+  alert(details); // алерт — чтобы точно не пропустить и было что сфотографировать
+} finally {
     setLoading(false);
   }
 }
