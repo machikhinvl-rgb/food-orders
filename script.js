@@ -208,12 +208,9 @@ async function loadBootstrap(parity) {
         if (!other.error) { state.bootstrapCache[otherParity] = other; renderWeekToggle(); }
       }).catch(() => {});
     }
-} catch (err) {
-  const online = navigator.onLine ? 'да' : 'НЕТ';
-  const details = 'Ошибка: ' + err.toString() + ' | Интернет доступен: ' + online + ' | URL: ' + (currentGasUrl() || 'нет');
-  setStatus(details, true);
-  alert(details); // алерт — чтобы точно не пропустить и было что сфотографировать
-} finally {
+  } catch (err) {
+    setStatus('Ошибка загрузки: ' + err.message, true);
+  } finally {
     setLoading(false);
   }
 }
@@ -418,7 +415,14 @@ async function saveWeek() {
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
-    setStatus('Ошибка: ' + err.message, true);
+    // ВРЕМЕННО, для диагностики "Failed to fetch" в установленном PWA на
+    // Android — показываем максимум деталей вместо общего err.message.
+    // Когда причина будет найдена и починена, можно вернуть простой вариант:
+    // setStatus('Ошибка: ' + err.message, true);
+    const online = navigator.onLine ? 'да' : 'НЕТ';
+    const details = 'Ошибка: ' + err.toString() + ' | Интернет доступен: ' + online + ' | URL: ' + (currentGasUrl() || 'нет');
+    setStatus(details, true);
+    alert(details); // алерт — чтобы точно не пропустить и было что сфотографировать
   } finally {
     setLoading(false);
   }
