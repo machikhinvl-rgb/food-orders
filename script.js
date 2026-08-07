@@ -121,31 +121,6 @@ async function apiPost(body) {
   return res.json();
 }
 
-// Отправка через XMLHttpRequest вместо fetch — обходной путь для saveWeek().
-// На некоторых Android WebView (именно в установленном PWA, не в обычной
-// вкладке Chrome) fetch() иногда падает с "Failed to fetch" без реальной
-// сетевой причины — известный класс багов конкретно WebView-рендерера.
-// XMLHttpRequest — более старый API, как правило не подвержен этому же
-// классу ошибок. Используется ТОЛЬКО в saveWeek(), остальные запросы пока
-// не трогаем, чтобы не менять то, что и так работает.
-function apiViaXHR(action, params) {
-  return new Promise((resolve, reject) => {
-    let urlStr;
-    try {
-      urlStr = buildApiUrl_(action, params);
-    } catch (e) { reject(e); return; }
-
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', urlStr, true);
-    xhr.onload = () => {
-      try { resolve(JSON.parse(xhr.responseText)); }
-      catch (e) { reject(new Error('Некорректный ответ сервера: ' + xhr.responseText)); }
-    };
-    xhr.onerror = () => reject(new Error('Сетевая ошибка (XHR): status=' + xhr.status));
-    xhr.send();
-  });
-}
-
 function setStatus(msg, isError) {
   const el = $('statusMsg');
   el.textContent = msg;
@@ -485,14 +460,7 @@ async function saveWeek() {
     if (res.error) throw new Error(res.error);
     setStatus('✅ Неделя сохранена');
   } catch (err) {
-    // ВРЕМЕННО, для диагностики "Failed to fetch" в установленном PWA на
-    // Android — показываем максимум деталей вместо общего err.message.
-    // Когда причина будет найдена и починена, можно вернуть простой вариант:
-    // setStatus('Ошибка: ' + err.message, true);
-    const online = navigator.onLine ? 'да' : 'НЕТ';
-    const details = 'Ошибка: ' + err.toString() + ' | Интернет доступен: ' + online + ' | URL: ' + (currentGasUrl() || 'нет');
-    setStatus(details, true);
-    alert(details); // алерт — чтобы точно не пропустить и было что сфотографировать
+    setStatus('Ошибка: ' + err.message, true);
   } finally {
     setLoading(false);
   }
