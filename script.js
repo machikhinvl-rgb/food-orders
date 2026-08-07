@@ -306,6 +306,7 @@ function renderDayTabs() {
   days.forEach((d, i) => {
     const [dd] = (d.date || '').split('.');
     const tab = document.createElement('div');
+    tab.dataset.index = i;
     const total = dayTotal(i);
     const isShiftDay = shiftsDates.has(d.date);
     let statusClass = '';
@@ -326,6 +327,33 @@ function renderDayTabs() {
   // а не из меню, чтобы даты сверху и вкладки никогда не расходились.
   if (days.length) {
     $('weekRangeLabel').textContent = (days[0].date || '') + ' – ' + (days[6].date || '');
+  }
+}
+
+// Точечно обновляет ОДНУ вкладку дня (сумму + подсветку) без пересборки
+// всех 7 вкладок целиком. Используется при каждом выборе блюда/количества —
+// это самое частое действие в приложении, и полная пересборка DOM на
+// каждый клик была особенно заметна на медленных устройствах.
+function updateDayTabDisplay(idx) {
+  const wrap = $('dayTabs');
+  const tab = wrap.querySelector(`.day-tab[data-index="${idx}"]`);
+  if (!tab) { renderDayTabs(); return; } // на всякий случай, если вкладок ещё нет — обычный полный рендер
+
+  const days = (state.orders && state.orders.days) || [];
+  const d = days[idx];
+  const total = dayTotal(idx);
+  const isShiftDay = d && shiftsDates.has(d.date);
+
+  let statusClass = '';
+  if (total > DAY_LIMIT) statusClass = ' day-over';
+  else if (total > 0) statusClass = ' day-ok';
+  else if (isShiftDay) statusClass = ' day-shift-noorder';
+
+  tab.className = 'day-tab' + (idx === state.selectedDayIndex ? ' active' : '') + statusClass;
+  const sumEl = tab.querySelector('.sum');
+  if (sumEl) {
+    sumEl.textContent = total + ' ₽';
+    sumEl.classList.toggle('over-limit', total > DAY_LIMIT);
   }
 }
 
@@ -403,14 +431,14 @@ function renderDayDetail() {
       if (dish && (!qty.value || Number(qty.value) < 1)) qty.value = '1';
       state.cart[idx][key] = { dish, qty: dish ? Number(qty.value) : 0, price: p };
       price.textContent = p + ' ₽';
-      renderDayTabs();
+      updateDayTabDisplay(idx);
       updateDayTotalDisplay(idx);
     });
 
     qty.addEventListener('change', () => {
       const v = Number(qty.value);
       state.cart[idx][key].qty = v;
-      renderDayTabs();
+      updateDayTabDisplay(idx);
       updateDayTotalDisplay(idx);
     });
 
